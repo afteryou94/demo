@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<!--1. 타임리프 선언과 테이블 (데이터 출력)-->
+<!--xmlns:th: "이 파일에서 th:로 시작하는 타임리프 문법을 쓰겠다"는 선언입니다.-->
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -8,10 +10,12 @@
 <table>
     <tr>
         <th>id</th>
+<!--        ${board.id}: BoardController에서 model.addAttribute("board", boardDTO)라고 담아 보냈던 그 board 객체를 꺼내는 것입니다.-->
         <td th:text="${board.id}"></td>
     </tr>
     <tr>
         <th>title</th>
+<!--        th:text: 서버에서 가져온 실제 값으로 <td> 태그 안의 내용을 갈아치웁니다.        -->
         <td th:text="${board.boardTitle}"></td>
     </tr>
     <tr>
@@ -31,23 +35,28 @@
         <td th:text="${board.boardContents}"></td>
     </tr>
 </table>
+<!--2. 버튼 구성-->
 <button onclick="listReq()">목록</button>
 <button onclick="updateReq()">수정</button>
 <button onclick="deleteReq()">삭제</button>
 <script th:inline="javascript">
+    // 3. 자바스크립트와 타임리프의 만남 (핵심 로직) ① 목록 이동 (listReq)
     const listReq = () => {
         console.log("상세조회 목록");
-        location.href = "/board/";
+        location.href = "/board/"; //게시판 전체 목록 페이지로 주소 이동
     }
     const updateReq = () => {
         console.log("수정 요청");
-        const id = [[${board.id}]];
-        location.href = `/board/update/${id}`;
+        // ② 수정 및 삭제 요청 (updateReq, deleteReq)
+        const id = [[${board.id}]]; //타임리프의 인라인 문법
+        location.href = `/board/update/${id}`; // 백틱(`)을 사용한 문자열 조합
     }
     const deleteReq = () => {
         console.log("삭제 요청");
         const id = [[${board.id}]];
         location.href = `/board/delete/${id}`;
+                //location.href: 브라우저의 주소창을 해당 주소로 강제 이동시킵니다. 결과적으로 컨트롤러의 @GetMapping("/board/update/{id}")를 호출
+
     }
 </script>
 </body>
