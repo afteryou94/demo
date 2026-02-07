@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>회원가입</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<h2>회원가입</h2>
+<form action="/member/save" method="post" id="saveForm">
+  ID: <input type="text" name="memberId" id="memberId" onblur="idCheck()">
+  <span id="id-check-result"></span><br>
+
+  PW: <input type="password" name="memberPassword" id="memberPassword">
+  <p id="pw-check-msg" style="font-size: 0.8em;"></p>
+
+  Nickname: <input type="text" name="memberNickname" id="memberNickname"><br>
+
+  Email: <input type="email" name="memberEmail" id="memberEmail">
+  <button type="button" onclick="sendEmail()">인증번호 전송</button><br>
+
+  인증번호 입력: <input type="text" id="authCode">
+  <button type="button" onclick="checkAuthCode()">확인</button>
+  <span id="mail-check-result"></span><br>
+
+  <input type="submit" value="회원가입" id="submitBtn" disabled>
+</form>
+
+<script th:inline="javascript">
+  let isIdValid = false;
+  let isMailAuthenticated = false;
+  let serverCode = ""; // 서버에서 보낸 인증번호 저장
+
+  // 아이디 중복 확인 및 정규식 검사
+  const idCheck = () => {
+    const id = document.getElementById("memberId").value;
+    const checkResult = document.getElementById("id-check-result");
+    const idReg = /^[a-zA-Z0-9]{6,10}$/;
+
+    if(!idReg.test(id)) {
+      checkResult.style.color = "red";
+      checkResult.innerText = "6~10자 영어 대소문자, 숫자만 가능합니다.";
+      isIdValid = false;
+      return;
+    }
+
+    $.ajax({
+      type: "post",
+      url: "/member/id-check",
+      data: { "memberId": id },
+      success: function(res) {
+        if (res == "ok") {
+          checkResult.style.color = "green";
+          checkResult.innerText = "사용 가능한 아이디입니다.";
+          isIdValid = true;
+        } else {
+          checkResult.style.color = "red";
+          checkResult.innerText = "이미 사용 중인 아이디입니다.";
+          isIdValid = false;
+        }
+      }
+    });
+  };
+
+  // 이메일 발송
+  const sendEmail = () => {
+    const email = document.getElementById("memberEmail").value;
+    alert("인증번호가 발송되었습니다.");
+    $.ajax({
+      type: "post",
+      url: "/member/mail-auth",
+      data: { "memberEmail": email },
+      success: function(code) {
+        serverCode = code;
+      }
+    });
+  };
+
+  // 이메일 인증번호 확인
+  const checkAuthCode = () => {
+    const inputCode = document.getElementById("authCode").value;
+    const result = document.getElementById("mail-check-result");
+    if(inputCode == serverCode) {
+      result.innerText = "인증 성공";
+      isMailAuthenticated = true;
+      document.getElementById("submitBtn").disabled = false; // 가입 버튼 활성화
+    } else {
+      result.innerText = "인증번호 불일치";
+    }
+  };
+
+  // 전체 폼 전송 전 검사 (PW 정규식 등)
+  document.getElementById("saveForm").onsubmit = function() {
+    const pw = document.getElementById("memberPassword").value;
+    const nick = document.getElementById("memberNickname").value;
+    const pwReg = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&])[A-Za-z\d$@$!%*?&]{6,16}$/;
+    const nickReg = /^[a-zA-Z0-9가-힣]{2,6}$/;
+
+    if(!pwReg.test(pw)) { alert("비밀번호 형식이 맞지 않습니다."); return false; }
+    if(!nickReg.test(nick)) { alert("닉네임 형식이 맞지 않습니다."); return false; }
+    if(!isIdValid) { alert("아이디 중복확인을 해주세요."); return false; }
+    if(!isMailAuthenticated) { alert("이메일 인증을 완료해주세요."); return false; }
+    return true;
+  };
+</script>
+</body>
+</html>

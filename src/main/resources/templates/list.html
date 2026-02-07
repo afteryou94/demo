@@ -22,6 +22,15 @@
     </tr>
 </table>
 <button onclick="saveReq()">글작성</button>
+<button onclick="joinReq()">회원가입</button> <script>
+    const saveReq = () => {
+        location.href = "/board/save";
+    }
+    // 회원가입 페이지로 이동하는 함수 추가
+    const joinReq = () => {
+        location.href = "/member/save";
+    }
+</script>
 </body>
 <script>
     const saveReq = () => {
