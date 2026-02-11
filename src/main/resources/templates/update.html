@@ -7,14 +7,22 @@
 <body>
 <div th:if="${errorMessage}" style="color: red;" th:text="${errorMessage}"></div>
 
-<form action="/board/update" method="post" name="updateForm">
-    <input type="hidden" name="id" th:value="${board.id}">
-    writer: <input type="text" name="boardWriter" th:value="${board.boardWriter}" readonly> <br>
-    pass: <input type="text" name="updatePass"> <br>
-    <input type="hidden" name="boardPass" th:value="${board.boardPass}">
-    title: <input type="text" name="boardTitle" th:value="${board.boardTitle}"> <br>
-    contents: <textarea name="boardContents" cols="30" rows="10" th:text="${board.boardContents}"></textarea> <br>
-    <input type="hidden" name="boardHits" th:value="${board.boardHits}">
+<form action="/board/update" method="post">
+    <input type="hidden" name="id" th:value="${boardUpdate.id}">
+
+    <div th:if="${session.loginId != null}">
+        <input type="hidden" name="boardWriter" th:value="${boardUpdate.boardWriter}">
+        <input type="hidden" name="updatePass" th:value="${boardUpdate.boardPass}">
+        <p>작성자: <span th:text="${boardUpdate.boardWriter}"></span> (수정 불가)</p>
+    </div>
+
+    <div th:if="${session.loginId == null}">
+        writer: <input type="text" name="boardWriter" th:value="${boardUpdate.boardWriter}"> <br>
+        pass: <input type="password" name="updatePass"> <br>
+    </div>
+
+    title: <input type="text" name="boardTitle" th:value="${boardUpdate.boardTitle}"> <br>
+    contents: <textarea name="boardContents" cols="30" rows="10" th:text="${boardUpdate.boardContents}"></textarea> <br>
     <input type="submit" value="글수정">
 </form>
 <script th:if="${errorMessage}">

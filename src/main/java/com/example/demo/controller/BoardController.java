@@ -5,11 +5,9 @@ import com.example.demo.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.servlet.http.HttpSession; // HttpSession을 위해 필요
 
 import java.util.List;
 
@@ -24,14 +22,21 @@ public class BoardController {
         return "save"; // templates/save.html 파일을 브라우저에 보여줌
     }
 
-    //2. 게시글 작성 (Save)
-    @PostMapping("/save") // 주소: POST /board/save (글쓰기 완료 버튼 클릭 시)
-    public String save(BoardDTO boardDTO){
-        // 브라우저에서 보낸 값(DTO)이 잘 들어왔는지 콘솔에 출력
-        System.out.println("boardDTO = " + boardDTO);
-        boardService.save(boardDTO); // 서비스의 저장 기능을 실행
-        return "redirect:/board/"; // 글 작성이 끝나면 게시글 목록 주소(/board/)로 다시 강제 이동
-    }
+        //2. 게시글 작성
+        @PostMapping("/save")
+        public String save(@ModelAttribute BoardDTO boardDTO, HttpSession session) {
+            // 세션에서 닉네임을 가져옴 (비로그인 시에는 null이 들어감)
+            String loginNickname = (String) session.getAttribute("loginNickname");
+
+            if (loginNickname != null) {
+                // 로그인 상태라면 세션의 닉네임으로 작성자 강제 고정
+                boardDTO.setBoardWriter(loginNickname);
+            }
+            // 비로그인 상태라면 HTML form에서 입력한 boardWriter가 그대로 저장됨
+
+            boardService.save(boardDTO);
+            return "redirect:/board/"; // 주소 끝에 슬래시(/)가 빠지지 않았는지 확인하세요!
+        }
 
     //3. 목록 및 상세 조회 (Read)
     @GetMapping("/") //주소: GET /board/
@@ -40,7 +45,7 @@ public class BoardController {
         List<BoardDTO> boardDTOList = boardService.findAll();
         // 화면(HTML)으로 데이터를 전달하기 위해 모델에 담음 (이름: boardList)
         model.addAttribute("boardList", boardDTOList);
-        return "List"; // templates/List.html 파일을 보여줌
+        return "list"; // templates/list.html 파일을 보여줌
     }
     //4. 수정 및 삭제 (Update & Delete)
     @GetMapping("/{id}") //주소: GET /board/1 (게시글 번호가 주소에 포함됨)
@@ -57,25 +62,67 @@ public class BoardController {
         return "redirect:/board/"; // 삭제 후 목록으로 이동
     }
 
-    @GetMapping("/update/{id}") // 주소: GET /board/update/1 (수정 화면 요청)
-    public String updateForm(@PathVariable Long id, Model model){
-        // 수정할 때 기존 내용을 보여줘야 하므로 findById로 데이터를 가져옴
-        BoardDTO boardDTO = boardService.findById(id);
-        model.addAttribute("board", boardDTO);
-        return "update"; // templates/update.html 파일을 보여줌
-    }
+        // BoardController.java
 
-    @PostMapping("/update") // 주소: POST /board/update (수정 완료 버튼 클릭 시)
-    public String update(BoardDTO boardDTO, RedirectAttributes redirectAttributes){
-        try {
-            boardService.update(boardDTO); // 수정된 내용 반영
-            // 수정 완료 후 해당 게시글의 상세 페이지로 다시 이동
-            return "redirect:/board/" + boardDTO.getId();
-        } catch (IllegalArgumentException e) {
-            // 수정 중 에러(예: 비번 틀림 등) 발생 시 에러 메시지를 일회성으로 담아 보냄
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            // 다시 수정 화면으로 돌려보냄
-            return "redirect:/board/update/" + boardDTO.getId();
+        // 삭제 비밀번호 입력 화면 요청
+        @GetMapping("/delete-check/{id}")
+        public String deleteCheckForm(@PathVariable Long id, Model model) {
+            model.addAttribute("id", id);
+            return "delete-check";
         }
-    }
+
+        // 실제 삭제 처리
+        @PostMapping("/delete")
+        public String delete(@RequestParam("id") Long id,
+                             @RequestParam("deletePass") String deletePass,
+                             HttpSession session,
+                             RedirectAttributes redirectAttributes) {
+
+            // 1. 세션에서 로그인 정보 확인 (로그인 사용자라면 비번 체크 생략 가능)
+            String loginId = (String) session.getAttribute("loginId");
+
+            // 2. 게시글 정보 가져오기
+            BoardDTO boardDTO = boardService.findById(id);
+
+            // 3. 권한 체크
+            if (loginId != null || boardDTO.getBoardPass().equals(deletePass)) {
+                // 로그인 중이거나, 입력한 비번이 DB 비번과 일치할 때
+                boardService.delete(id);
+                return "redirect:/board/";
+            } else {
+                // 비밀번호 불일치
+                redirectAttributes.addFlashAttribute("errorMessage", "비밀번호가 일치하지 않습니다.");
+                return "redirect:/board/delete-check/" + id;
+            }
+        }
+
+        // BoardController.java 수정
+        @GetMapping("/update/{id}")
+        public String updateForm(@PathVariable Long id, Model model){
+            BoardDTO boardDTO = boardService.findById(id);
+            // 기존: model.addAttribute("board", boardDTO);
+            model.addAttribute("boardUpdate", boardDTO); // html의 ${boardUpdate}와 이름을 맞춰야 함!
+            return "update";
+        }
+
+        @PostMapping("/update")
+        public String update(@ModelAttribute BoardDTO boardDTO, HttpSession session, RedirectAttributes redirectAttributes) {
+            // 세션에서 로그인 정보 확인
+            String loginId = (String) session.getAttribute("loginId");
+
+            try {
+                // 로그인 상태라면 비밀번호 체크를 통과하기 위해 기존 비밀번호를 updatePass에 넣어줌
+                if (loginId != null) {
+                    BoardDTO currentBoard = boardService.findById(boardDTO.getId());
+                    boardDTO.setUpdatePass(currentBoard.getBoardPass());
+                }
+
+                boardService.update(boardDTO);
+                return "redirect:/board/" + boardDTO.getId();
+            } catch (IllegalArgumentException e) {
+                redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+                return "redirect:/board/update/" + boardDTO.getId();
+            }
+        }
+
 }

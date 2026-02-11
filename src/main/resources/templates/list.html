@@ -5,6 +5,18 @@
     <title>list</title>
 </head>
 <body>
+<div style="text-align: right; padding: 10px;">
+    <div th:if="${session.loginId == null}">
+        <a href="/member/login">로그인</a>
+        <a href="/member/save">회원가입</a>
+    </div>
+    <div th:if="${session.loginId != null}">
+        <span th:text="${session.loginNickname} + '님 접속 중'"></span>
+        <a href="/member/logout">로그아웃</a>
+    </div>
+</div>
+
+<h2>게시글 목록</h2>
 <table>
     <tr>
         <th>id</th>
@@ -21,20 +33,17 @@
         <td th:text="${board.boardHits}"></td>
     </tr>
 </table>
+
 <button onclick="saveReq()">글작성</button>
-<button onclick="joinReq()">회원가입</button> <script>
+<button onclick="joinReq()">회원가입</button>
+
+<script>
     const saveReq = () => {
         location.href = "/board/save";
     }
-    // 회원가입 페이지로 이동하는 함수 추가
     const joinReq = () => {
         location.href = "/member/save";
     }
 </script>
 </body>
-<script>
-    const saveReq = () => {
-        location.href = "/board/save";
-    }
-</script>
 </html>

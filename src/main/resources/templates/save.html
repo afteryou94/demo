@@ -6,8 +6,11 @@
 </head>
 <body>
 <form action="/board/save" method="post">
+    <!--th:value="${session.loginNickname}" : 컨트롤러에서 담아준 세션 값(loginNickname)을 타임리프가 바로 꺼내서 보여줍니다.-->
     writer: <input type="text" name="boardWriter"> <br>
+
     pass: <input type="text" name="boardPass"> <br>
+
     title: <input type="text" name="boardTitle"> <br>
     contents: <textarea name="boardContents" cols="30" rows="10"></textarea> <br>
     <input type="submit" value="글작성">
