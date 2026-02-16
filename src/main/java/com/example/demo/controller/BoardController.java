@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.BoardDTO;
+import com.example.demo.dto.CommentDTO;
+import com.example.demo.service.CommentService;
 import com.example.demo.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -8,6 +10,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import jakarta.servlet.http.HttpSession; // HttpSession을 위해 필요
+import jakarta.validation.Valid; // 추가
+import org.springframework.validation.BindingResult; // 추가
 
 import java.util.List;
 
@@ -17,26 +21,34 @@ import java.util.List;
 @RequestMapping("/board") // 이 클래스 내 모든 메서드의 주소 앞에 /board가 기본으로 붙음
 public class BoardController {
     private final BoardService boardService; // 비즈니스 로직을 처리하는 서비스 객체를 주입받음
-    @GetMapping("/save") // 주소: GET /board/save
-    public String saveForm(){
-        return "save"; // templates/save.html 파일을 브라우저에 보여줌
+        private final CommentService commentService;
+@GetMapping("/save")
+public String saveForm(Model model) {
+    model.addAttribute("boardDTO", new BoardDTO()); // 빈 객체를 넘겨줍니다.
+    return "save";
+}
+
+
+//        }
+@PostMapping("/save")
+public String save(@Valid @ModelAttribute BoardDTO boardDTO, BindingResult bindingResult, HttpSession session) {
+    // 1. 유효성 검사 결과 에러가 있다면 (비번 1자리 등)
+    if (bindingResult.hasErrors()) {
+        // 에러가 발생한 페이지(save.html)로 다시 돌려보냅니다.
+        return "save";
     }
 
-        //2. 게시글 작성
-        @PostMapping("/save")
-        public String save(@ModelAttribute BoardDTO boardDTO, HttpSession session) {
-            // 세션에서 닉네임을 가져옴 (비로그인 시에는 null이 들어감)
-            String loginNickname = (String) session.getAttribute("loginNickname");
+    String loginNickname = (String) session.getAttribute("loginNickname");
+    String loginId = (String) session.getAttribute("loginEmail");
 
-            if (loginNickname != null) {
-                // 로그인 상태라면 세션의 닉네임으로 작성자 강제 고정
-                boardDTO.setBoardWriter(loginNickname);
-            }
-            // 비로그인 상태라면 HTML form에서 입력한 boardWriter가 그대로 저장됨
+    if (loginId != null) {
+        boardDTO.setBoardWriter(loginNickname);
+        boardDTO.setMemberEmail(loginId);
+    }
 
-            boardService.save(boardDTO);
-            return "redirect:/board/"; // 주소 끝에 슬래시(/)가 빠지지 않았는지 확인하세요!
-        }
+    boardService.save(boardDTO, loginId);
+    return "redirect:/board/";
+}
 
     //3. 목록 및 상세 조회 (Read)
     @GetMapping("/") //주소: GET /board/
@@ -48,19 +60,34 @@ public class BoardController {
         return "list"; // templates/list.html 파일을 보여줌
     }
     //4. 수정 및 삭제 (Update & Delete)
-    @GetMapping("/{id}") //주소: GET /board/1 (게시글 번호가 주소에 포함됨)
-    public String findById(@PathVariable Long id, Model model){
-        boardService.updateHits(id); // 해당 게시글의 조회수를 1 증가시킴
-        BoardDTO boardDTO = boardService.findById(id); // id값으로 게시글 1건의 데이터를 가져옴
-        model.addAttribute("board", boardDTO); // 상세 내용을 "board"라는 이름으로 HTML에 전달
-        return "detail"; // templates/detail.html 파일을 보여줌
-    }
+        // BoardController.java
+        @GetMapping("/{id}")
+        public String findById(@PathVariable Long id, Model model) {
+            boardService.updateHits(id);
+            BoardDTO boardDTO = boardService.findById(id);
 
-    @GetMapping("/delete/{id}") // 주소: GET /board/delete/1
-    public String delete(@PathVariable Long id){
-        boardService.delete(id); // 서비스에 삭제 명령 전달
-        return "redirect:/board/"; // 삭제 후 목록으로 이동
-    }
+            // [추가] 해당 게시글의 댓글 목록 가져오기
+            List<CommentDTO> commentDTOList = commentService.findAll(id);
+            model.addAttribute("board", boardDTO);
+            model.addAttribute("commentList", commentDTOList); // HTML의 th:each="comment: ${commentList}"와 연결됨
+
+            return "detail";
+        }
+
+        @GetMapping("/delete/{id}")
+        public String delete(@PathVariable Long id, HttpSession session) {
+            String loginEmail = (String) session.getAttribute("loginEmail");
+            BoardDTO boardDTO = boardService.findById(id);
+
+            // 로그인 유저가 자기 글을 삭제하는 경우
+            if (boardDTO.getMemberEmail() != null && boardDTO.getMemberEmail().equals(loginEmail)) {
+                boardService.delete(id, loginEmail, null);
+                return "redirect:/board/";
+            }
+
+            // 그 외(비로그인 유저 글이거나 타인의 글인 경우) -> 비밀번호 확인 페이지로 이동
+            return "redirect:/board/delete-check/" + id;
+        }
 
         // BoardController.java
 
@@ -71,58 +98,62 @@ public class BoardController {
             return "delete-check";
         }
 
-        // 실제 삭제 처리
-        @PostMapping("/delete")
-        public String delete(@RequestParam("id") Long id,
-                             @RequestParam("deletePass") String deletePass,
-                             HttpSession session,
-                             RedirectAttributes redirectAttributes) {
 
-            // 1. 세션에서 로그인 정보 확인 (로그인 사용자라면 비번 체크 생략 가능)
-            String loginId = (String) session.getAttribute("loginId");
-
-            // 2. 게시글 정보 가져오기
-            BoardDTO boardDTO = boardService.findById(id);
-
-            // 3. 권한 체크
-            if (loginId != null || boardDTO.getBoardPass().equals(deletePass)) {
-                // 로그인 중이거나, 입력한 비번이 DB 비번과 일치할 때
-                boardService.delete(id);
-                return "redirect:/board/";
-            } else {
-                // 비밀번호 불일치
-                redirectAttributes.addFlashAttribute("errorMessage", "비밀번호가 일치하지 않습니다.");
-                return "redirect:/board/delete-check/" + id;
-            }
-        }
 
         // BoardController.java 수정
+// 수정 화면 요청
         @GetMapping("/update/{id}")
-        public String updateForm(@PathVariable Long id, Model model){
+        public String updateForm(@PathVariable Long id, Model model, HttpSession session) {
             BoardDTO boardDTO = boardService.findById(id);
-            // 기존: model.addAttribute("board", boardDTO);
-            model.addAttribute("boardUpdate", boardDTO); // html의 ${boardUpdate}와 이름을 맞춰야 함!
+            String loginEmail = (String) session.getAttribute("loginEmail");
+
+            // 1. 로그인 유저가 쓴 글인 경우
+            if (boardDTO.getMemberEmail() != null) {
+                if (!boardDTO.getMemberEmail().equals(loginEmail)) {
+                    return "redirect:/board/?error=unauthorized";
+                }
+                model.addAttribute("boardUpdate", boardDTO);
+                return "update"; // 바로 수정 페이지로
+            }
+
+            // 2. 비로그인 유저가 쓴 글인 경우 (memberEmail이 null인 경우)
+            // 바로 수정페이지로 보내되, 수정 완료 시 비밀번호를 체크하게 합니다.
+            model.addAttribute("boardUpdate", boardDTO);
             return "update";
         }
 
+        // 실제 수정 처리
         @PostMapping("/update")
-        public String update(@ModelAttribute BoardDTO boardDTO, HttpSession session, RedirectAttributes redirectAttributes) {
-            // 세션에서 로그인 정보 확인
-            String loginId = (String) session.getAttribute("loginId");
+        public String update(@ModelAttribute BoardDTO boardDTO, HttpSession session) {
+            String loginEmail = (String) session.getAttribute("loginEmail");
 
             try {
-                // 로그인 상태라면 비밀번호 체크를 통과하기 위해 기존 비밀번호를 updatePass에 넣어줌
-                if (loginId != null) {
-                    BoardDTO currentBoard = boardService.findById(boardDTO.getId());
-                    boardDTO.setUpdatePass(currentBoard.getBoardPass());
-                }
-
-                boardService.update(boardDTO);
+                // DTO에 담긴 boardPass를 서비스의 3번째 인자로 전달합니다.
+                boardService.update(boardDTO, loginEmail, boardDTO.getBoardPass());
                 return "redirect:/board/" + boardDTO.getId();
-            } catch (IllegalArgumentException e) {
-                redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-                return "redirect:/board/update/" + boardDTO.getId();
+            } catch (RuntimeException e) {
+                return "redirect:/board/?error=auth";
             }
         }
+        // 비밀번호 입력 후 삭제 버튼을 눌렀을 때 호출되는 메서드
+        // BoardController.java
+
+        // 비밀번호 입력 후 삭제 버튼을 눌렀을 때 호출되는 메서드
+        @PostMapping("/delete") // 클래스 상단의 /board와 합쳐져서 실제 주소는 /board/delete가 됨
+        public String delete(@RequestParam("id") Long id,
+                             @RequestParam("boardPass") String boardPass,
+                             HttpSession session) {
+
+            String loginEmail = (String) session.getAttribute("loginEmail");
+
+            try {
+                boardService.delete(id, loginEmail, boardPass);
+                return "redirect:/board/";
+            } catch (RuntimeException e) {
+                // [중요] 여기서 튕길 때 /board/가 아니라 /member/login으로 가고 있지 않은지 확인!
+                return "redirect:/board/" + id + "?error=auth";
+            }
+        }
+
 
 }

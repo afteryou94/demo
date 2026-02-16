@@ -1,21 +1,28 @@
 <!DOCTYPE html>
-<!--1. 타임리프 선언과 테이블 (데이터 출력)-->
-<!--xmlns:th: "이 파일에서 th:로 시작하는 타임리프 문법을 쓰겠다"는 선언입니다.-->
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>detail</title>
+    <title>상세보기</title>
 </head>
+<div id="comment-write">
+    <div th:if="${session.loginEmail == null}">
+        <input type="text" id="commentWriter" placeholder="이름(2~10자)">
+        <input type="password" id="commentPass" placeholder="비밀번호(4자 이상)">
+    </div>
+    <textarea id="commentContents" placeholder="내용을 입력하세요"></textarea>
+    <button id="comment-write-btn" onclick="commentWrite()">댓글등록</button>
+</div>
+
+<div id="comment-list">
+
 <body>
 <table>
     <tr>
         <th>id</th>
-<!--        ${board.id}: BoardController에서 model.addAttribute("board", boardDTO)라고 담아 보냈던 그 board 객체를 꺼내는 것입니다.-->
         <td th:text="${board.id}"></td>
     </tr>
     <tr>
         <th>title</th>
-<!--        th:text: 서버에서 가져온 실제 값으로 <td> 태그 안의 내용을 갈아치웁니다.        -->
         <td th:text="${board.boardTitle}"></td>
     </tr>
     <tr>
@@ -34,34 +41,152 @@
         <th>contents</th>
         <td th:text="${board.boardContents}"></td>
     </tr>
+    <tr>
+        <th>번호</th><th>작성자</th><th>내용</th><th>작성시간</th><th>삭제</th>
+    </tr>
+
+    <tr th:each="comment: ${commentList}" th:id="'tr-' + ${comment.id}">
+        <td th:text="${comment.id}"></td>
+        <td th:text="${comment.commentWriter}"></td>
+        <td th:id="'contents-' + ${comment.id}" th:text="${comment.commentContents}"></td>
+        <td th:text="${comment.commentCreatedAt}"></td>
+        <td>
+            <button th:onclick="showUpdateForm([[${comment.id}]])">수정</button>
+            <button th:onclick="commentDelete([[${comment.id}]])">삭제</button>
+        </td>
+    </tr>
+
 </table>
-<!--2. 버튼 구성-->
+
 <button onclick="listReq()">목록</button>
-<button onclick="updateReq()">수정</button>
-<button onclick="deleteReq()">삭제</button>
+
+<div th:if="${session.loginEmail == board.memberEmail}">
+    <button th:onclick="|location.href='@{/board/update/{id}(id=${board.id})}'|">수정</button>
+    <button th:onclick="deleteConfirm()">삭제</button>
+</div>
+
 <script th:inline="javascript">
-    // 3. 자바스크립트와 타임리프의 만남 (핵심 로직) ① 목록 이동 (listReq)
     const listReq = () => {
-        console.log("상세조회 목록");
-        location.href = "/board/"; //게시판 전체 목록 페이지로 주소 이동
+        location.href = "/board/";
     }
-    const updateReq = () => {
-        console.log("수정 요청");
-        // ② 수정 및 삭제 요청 (updateReq, deleteReq)
-        const id = [[${board.id}]]; //타임리프의 인라인 문법
-        location.href = `/board/update/${id}`; // 백틱(`)을 사용한 문자열 조합
+
+    // 삭제 버튼 클릭 시 한 번 더 물어보는 센스
+    const deleteConfirm = () => {
+        if (confirm("정말로 삭제하시겠습니까?")) {
+            const id = [[${board.id}]];
+            location.href = `/board/delete/${id}`;
+        }
+
     }
-    // const deleteReq = () => { 비로그인 비밀번호 요구 전 코드
-    //     console.log("삭제 요청");
-    //     const id = [[${board.id}]];
-    //     location.href = `/board/delete/${id}`;
-    //             //location.href: 브라우저의 주소창을 해당 주소로 강제 이동시킵니다. 결과적으로 컨트롤러의 @GetMapping("/board/update/{id}")를 호출
-    //
-    // }
-    const deleteReq = () => { //비로그인 비밀번호
-        const id = [[${board.id}]];
-        location.href = "/board/delete-check/" + id;
+    const commentWrite = () => {
+        const writer = document.getElementById('commentWriter')?.value;
+        const pass = document.getElementById('commentPass')?.value;
+        const contents = document.getElementById('commentContents').value;
+        const boardId = [[${board.id}]]; // 게시글 번호
+
+        // 데이터 전송용 (FormData나 URLSearchParams 사용)
+        const params = new URLSearchParams();
+        params.append('boardId', boardId);
+        params.append('commentContents', contents);
+        if(writer) params.append('commentWriter', writer);
+        if(pass) params.append('commentPass', pass);
+
+        fetch("/comment/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params
+        })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.text().then(text => { throw new Error(text) });
+            })
+            .then(commentList => {
+                console.log("댓글 목록 업데이트", commentList);
+                location.reload(); // 가장 간단한 방법은 새로고침, 하지만 Ajax답게 하려면 아래처럼 그림
+                // updateCommentList(commentList);
+            })
+            .catch(err => alert(err.message));
     }
+
+    // detail.html 하단 스크립트에 추가
+
+    const commentDelete = (commentId) => {
+        // 1. 세션에 이메일이 있는지 확인 (자바스크립트에서 세션값 확인)
+        const loginEmail = [[${session.loginEmail}]];
+        let commentPass = null;
+
+        // 2. 비로그인 상태라면 비밀번호 입력받기
+        if (!loginEmail) {
+            commentPass = prompt("비밀번호를 입력하세요.");
+            if (!commentPass) return; // 취소 누르면 중단
+        }
+
+        // 3. 서버로 삭제 요청 전송
+        const params = new URLSearchParams();
+        params.append('id', commentId);
+        if (commentPass) params.append('commentPass', commentPass);
+
+        fetch("/comment/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params
+        })
+            .then(res => {
+                if (res.ok) {
+                    alert("삭제되었습니다.");
+                    location.reload(); // 화면 갱신
+                } else {
+                    return res.text().then(text => { throw new Error(text) });
+                }
+            })
+            .catch(err => alert(err.message));
+    }
+
+    // 수정 폼 보여주기
+    const showUpdateForm = (commentId) => {
+        const contentsTd = document.getElementById('contents-' + commentId);
+        const originalContents = contentsTd.innerText;
+
+        // 기존 내용을 입력창으로 교체
+        contentsTd.innerHTML = `
+            <textarea id="update-contents-${commentId}">${originalContents}</textarea>
+            <button onclick="commentUpdate(${commentId})">완료</button>
+            <button onclick="location.reload()">취소</button>
+        `;
+    }
+
+    // 수정 서버 전송
+    const commentUpdate = (commentId) => {
+        const contents = document.getElementById('update-contents-' + commentId).value;
+        const loginEmail = [[${session.loginEmail}]];
+        let commentPass = null;
+
+        if (!loginEmail) {
+            commentPass = prompt("댓글 비밀번호를 입력하세요.");
+            if (!commentPass) return;
+        }
+
+        const params = new URLSearchParams();
+        params.append('id', commentId);
+        params.append('commentContents', contents);
+        if (commentPass) params.append('commentPass', commentPass);
+
+        fetch("/comment/update", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params
+        })
+            .then(res => {
+                if (res.ok) {
+                    alert("수정되었습니다.");
+                    location.reload();
+                } else {
+                    return res.text().then(text => { throw new Error(text) });
+                }
+            })
+            .catch(err => alert(err.message));
+    }
+
 </script>
 </body>
 </html>

@@ -17,12 +17,20 @@ import java.util.Optional;
 public class BoardService {
     private final BoardRepository boardRepository; // DB와 연결되는 통로
         // 2. 글 저장 (Save)
-    public void save(BoardDTO boardDTO) {
-        // 2-1. 화면에서 받아온 DTO를 DB에 저장하기 위한 Entity 형식으로 변환함
-        BoardEntity boardEntity = BoardEntity.toSaveEntity(boardDTO);
-        // 2-2. 리포지토리를 통해 실제 DB에 저장함
-        boardRepository.save(boardEntity);
-    }
+//    public void save(BoardDTO boardDTO) {
+//        // 2-1. 화면에서 받아온 DTO를 DB에 저장하기 위한 Entity 형식으로 변환함
+//        BoardEntity boardEntity = BoardEntity.toSaveEntity(boardDTO);
+//        // 2-2. 리포지토리를 통해 실제 DB에 저장함
+//        boardRepository.save(boardEntity);
+//    }
+
+     public void save(BoardDTO boardDTO, String loginEmail) {
+         // 세션에서 가져온 로그인 이메일을 DTO에 담음
+         boardDTO.setMemberEmail(loginEmail);
+
+         BoardEntity boardEntity = BoardEntity.toSaveEntity(boardDTO);
+         boardRepository.save(boardEntity);
+     }
 
     //3. 전체 목록 가져오기 (Find All)
     public List<BoardDTO> findAll() {
@@ -43,37 +51,63 @@ public class BoardService {
         boardRepository.updateHits(id); // 리포지토리에 정의된 쿼리로 조회수 +1
     }
 
-    public BoardDTO findById(Long id) {
-        // Optional: 데이터가 있을 수도, 없을 수도 있다는 것을 표현하는 자바 박스
-        Optional<BoardEntity> optionalBoardEntity = boardRepository.findById(id);
-        if (optionalBoardEntity.isPresent()) { // 만약 데이터가 박스 안에 있다면
-            BoardEntity boardEntity = optionalBoardEntity.get(); // 꺼내서
-            return BoardDTO.toBoardDTO(boardEntity); // DTO로 변환해서 반환
-        } else {
-            return null; // 없으면 null 반환
+        // 상세 조회 시 작성자 확인 (수정 화면 진입 전 검증용)
+        public BoardDTO findById(Long id) {
+            Optional<BoardEntity> optionalBoardEntity = boardRepository.findById(id);
+            if (optionalBoardEntity.isPresent()) {
+                return BoardDTO.toBoardDTO(optionalBoardEntity.get());
+            } else {
+                return null;
+            }
         }
-    }
 
-    public void delete(Long id) {
-        boardRepository.deleteById(id);
-    }
+        // 삭제 처리 전 검증
+        @Transactional
+        public void delete(Long id, String loginEmail, String inputPass) {
+            BoardEntity boardEntity = boardRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("게시글이 없습니다."));
 
-    //5. 글 수정 (Update) - 핵심 로직
-    @Transactional
-    public void update(BoardDTO boardDTO) {
-        // 5-1. 기존 게시글을 DB에서 가져옴. 없으면 에러(Exception)를 던짐,
-        BoardEntity boardEntity = boardRepository.findById(boardDTO.getId()).orElseThrow(() ->
-                //↑ boardDTO.getId()의 의미: "사용자가 지금 몇 번 글을 수정하겠다고 요청했지?" 하고 가방에서 이름표(ID)를 확인하는 것
-                //↑ boardRepository.findById(...)의 의미: "그 이름표(ID)를 가진 **진짜 데이터(Entity)**를 DB 창고에서 가져와!"라는 뜻
-                new IllegalArgumentException("해당 게시글을 찾을 수 없습니다."));
-
-        // 5-2. DB에 저장된 비번(getBoardPass)과 사용자가 수정을 시도하며 입력한 비번(getUpdatePass)을 비교
-        if (boardEntity.getBoardPass().equals(boardDTO.getUpdatePass())){
-            // 5-3. 일치하면 Entity의 내용을 업데이트함 (Dirty Checking 방식)
-            boardEntity.update(boardDTO);
-        } else {
-            // 5-4. 일치하지 않으면 에러를 발생시켜서 작업을 중단함
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+            if (boardEntity.getMemberEmail() != null) {
+                // 1. 로그인 유저가 쓴 글인 경우: 이메일 비교
+                if (!boardEntity.getMemberEmail().equals(loginEmail)) {
+                    throw new RuntimeException("본인의 글만 삭제할 수 있습니다.");
+                }
+            } else {
+                // 2. 비로그인 유저가 쓴 글인 경우: 비밀번호 비교
+                if (!boardEntity.getBoardPass().equals(inputPass)) {
+                    throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+                }
+            }
+            boardRepository.deleteById(id);
         }
-    }
+
+        // 수정 처리 전 검증
+        @Transactional
+        public void update(BoardDTO boardDTO, String loginEmail, String inputPass) {
+            BoardEntity boardEntity = boardRepository.findById(boardDTO.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다."));
+
+//            if (boardEntity.getMemberEmail() != null) {
+//                // 1. 로그인 유저가 쓴 글인 경우: 이메일 비교
+//                if (!boardEntity.getMemberEmail().equals(loginEmail)) {
+//                    throw new RuntimeException("본인의 글만 수정할 수 있습니다.");
+//                }
+//            } else {
+//                // 2. 비로그인 유저가 쓴 글인 경우: 비밀번호 비교
+//                if (!boardEntity.getBoardPass().equals(inputPass)) {
+//                    throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+//                }
+//            }
+            // BoardService.java의 삭제/수정 로직 권장 형태
+            if (boardEntity.getMemberEmail() != null && !boardEntity.getMemberEmail().isEmpty()) {
+                // 로그인 글 비교
+            } else {
+                // 비로그인 글 비밀번호 비교
+                if (!boardEntity.getBoardPass().equals(inputPass)) {
+                    throw new RuntimeException("비밀번호 불일치");
+                }
+            }
+
+            boardEntity.update(boardDTO); // 기존 update 메서드 호출
+        }
 }

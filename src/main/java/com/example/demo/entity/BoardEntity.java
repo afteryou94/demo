@@ -6,7 +6,10 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-    //1. 주요 어노테이션 (설계 규칙)
+import java.util.ArrayList;
+import java.util.List;
+
+//1. 주요 어노테이션 (설계 규칙)
 @Entity //"이 클래스는 이제부터 자바 객체가 아니라 DB 테이블이다!"라고 스프링(JPA)에게 선언하는 것입니다.
 @Getter
     //JPA는 내부적으로 기본 생성자가 꼭 필요합니다.
@@ -23,6 +26,9 @@ public class BoardEntity extends BaseTimeEntity { //작성 시간, 수정 시간
     private String boardWriter;
 
     @Column
+    private String memberEmail;
+
+    @Column
     private String boardPass;
 
     @Column
@@ -34,10 +40,17 @@ public class BoardEntity extends BaseTimeEntity { //작성 시간, 수정 시간
     @Column
     private int boardHits;
 
+// BoardEntity.java 내부에 추가
+
+        @OneToMany(mappedBy = "boardEntity", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
+        private List<CommentEntity> commentEntityList = new ArrayList<>();
+
 //3. 정적 메서드: toSaveEntity (저장용 변환기) : 사용자가 쓴 글(DTO)을 DB에 처음 저장하기 위해 Entity로 바꾸는 과정
     public static BoardEntity toSaveEntity(BoardDTO boardDTO) {
         BoardEntity boardEntity = new BoardEntity(); // 1. 새 엔티티 객체 생성
         boardEntity.boardWriter = boardDTO.getBoardWriter(); // 2. DTO 값 복사
+        // DTO에 담긴 이메일을 엔티티에 복사
+        boardEntity.memberEmail = boardDTO.getMemberEmail();
         boardEntity.boardPass = boardDTO.getBoardPass();
         boardEntity.boardTitle = boardDTO.getBoardTitle();
         boardEntity.boardContents = boardDTO.getBoardContents();

@@ -3,7 +3,8 @@ server:
 
 spring:
   profiles:
-    include: local  # local 파일을 포함해서 읽어오라는 뜻
+    group:
+      "default": "local, oauth"  # local, oauth 파일을 포함해서 읽어오라는 뜻
   application:
     name: demo
   datasource:

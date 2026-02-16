@@ -8,13 +8,40 @@
 <body>
 <h2>회원가입</h2>
 <form action="/member/save" method="post" id="saveForm">
-  ID: <input type="text" name="memberId" id="memberId" onblur="idCheck()">
+  ID: <input type="text" name="memberId" maxlength="16" placeholder="아이디(최대 16자)" id="memberId" onblur="idCheck()">
   <span id="id-check-result"></span><br>
 
   PW: <input type="password" name="memberPassword" id="memberPassword">
   <p id="pw-check-msg" style="font-size: 0.8em;"></p>
 
+
+  <small class="password-guide">
+      영문 대 소문자, 숫자, 특수문자를 최소 한번씩 포함하여 8~16자를 사용해야 합니다.
+  </small>
+
+  <style>
+    .password-guide {
+      display: block; /* 줄바꿈을 위해 block 설정 */
+      margin-top: 5px;
+      color: #666; /* 너무 검지 않은 회색 */
+      font-size: 0.85em;
+    }
+  </style>
+
   Nickname: <input type="text" name="memberNickname" id="memberNickname"><br>
+
+  <small class="Nickname-guide">
+    공백을 제외한 모든 문자로 2~10자를 사용해야 합니다.
+  </small>
+
+  <style>
+    .Nickname-guide {
+      display: block; /* 줄바꿈을 위해 block 설정 */
+      margin-top: 5px;
+      color: #666; /* 너무 검지 않은 회색 */
+      font-size: 0.85em;
+    }
+  </style>
 
   Email: <input type="email" name="memberEmail" id="memberEmail">
   <button type="button" onclick="sendEmail()">인증번호 전송</button><br>
@@ -94,7 +121,7 @@
     const pw = document.getElementById("memberPassword").value;
     const nick = document.getElementById("memberNickname").value;
     const pwReg = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&])[A-Za-z\d$@$!%*?&]{6,16}$/;
-    const nickReg = /^[a-zA-Z0-9가-힣]{2,6}$/;
+    const nickReg = /^[a-zA-Z0-9가-힣]{2,10}$/;
 
     if(!pwReg.test(pw)) { alert("비밀번호 형식이 맞지 않습니다."); return false; }
     if(!nickReg.test(nick)) { alert("닉네임 형식이 맞지 않습니다."); return false; }

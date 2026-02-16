@@ -5,14 +5,24 @@
     <title>save</title>
 </head>
 <body>
-<form action="/board/save" method="post">
-    <!--th:value="${session.loginNickname}" : 컨트롤러에서 담아준 세션 값(loginNickname)을 타임리프가 바로 꺼내서 보여줍니다.-->
-    writer: <input type="text" name="boardWriter"> <br>
+<form action="/board/save" th:object="${boardDTO}" method="post">
 
-    pass: <input type="text" name="boardPass"> <br>
+    <div th:if="${session.loginEmail != null}">
+        <p>작성자: <span th:text="${session.loginNickname}"></span></p>
+        <input type="hidden" th:field="*{boardWriter}">
+    </div>
 
-    title: <input type="text" name="boardTitle"> <br>
-    contents: <textarea name="boardContents" cols="30" rows="10"></textarea> <br>
+    <div th:if="${session.loginEmail == null}">
+        <input type="text" th:field="*{boardWriter}" placeholder="작성자 이름">
+        <p th:if="${#fields.hasErrors('boardWriter')}" th:errors="*{boardWriter}" style="color: red;"></p>
+
+        <input type="password" th:field="*{boardPass}" placeholder="비밀번호">
+        <p th:if="${#fields.hasErrors('boardPass')}" th:errors="*{boardPass}" style="color: red;"></p>
+    </div>
+
+    <input type="text" th:field="*{boardTitle}" placeholder="제목">
+    <textarea th:field="*{boardContents}"></textarea>
+
     <input type="submit" value="글작성">
 </form>
 </body>

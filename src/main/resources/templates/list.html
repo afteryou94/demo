@@ -6,13 +6,17 @@
 </head>
 <body>
 <div style="text-align: right; padding: 10px;">
-    <div th:if="${session.loginId == null}">
+    <div th:if="${session.loginEmail == null}">
+        <a href="/oauth2/authorization/google">구글 계정으로 로그인</a> <br>
+        <a href="/oauth2/authorization/naver">네이버 계정으로 로그인</a> <br>
         <a href="/member/login">로그인</a>
         <a href="/member/save">회원가입</a>
     </div>
-    <div th:if="${session.loginId != null}">
-        <span th:text="${session.loginNickname} + '님 접속 중'"></span>
-        <a href="/member/logout">로그아웃</a>
+
+    <div th:if="${session.loginEmail != null}">
+        <span th:text="${session.loginNickname} + '님 환영합니다!'"></span>
+        <a href="/member/update" class="btn btn-primary">내 정보 수정</a>
+        <a href="/member/logout" class="btn btn-danger">로그아웃</a>
     </div>
 </div>
 

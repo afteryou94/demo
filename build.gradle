@@ -37,6 +37,17 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	// 소셜 로그인을 위한 핵심 라이브러리
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+	// 권한 관리를 위한 스프링 시큐리티 (이미 있다면 생략 가능)
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+
+	// 타임리프에서 스프링 시큐리티 문법을 쓰기 위한 라이브러리
+	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
+	//Size 어노테이션
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 }
 
 tasks.named('test') {
