@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>회원정보 수정</title>
+</head>
+<body>
+<h2>회원정보 수정</h2>
+<form action="/member/update" method="post" th:object="${updateMember}">
+    <input type="hidden" th:field="*{id}">
+
+    <div>
+        <label>이메일(아이디):</label>
+        <input type="text" th:field="*{memberEmail}" readonly>
+    </div>
+
+    <div>
+        <label>이름:</label>
+        <input type="text" th:field="*{memberName}" readonly>
+    </div>
+
+    <div>
+        <label>닉네임:</label>
+        <input type="text" th:field="*{memberNickname}">
+        <p th:if="${#fields.hasErrors('memberNickname')}" th:errors="*{memberNickname}" style="color:red;"></p>
+    </div>
+
+    <small class="Nickname-guide">
+        공백을 제외한 모든 문자로 2~10자를 사용해야 합니다.
+    </small>
+
+    <style>
+        .Nickname-guide {
+            display: block; /* 줄바꿈을 위해 block 설정 */
+            margin-top: 5px;
+            color: #666; /* 너무 검지 않은 회색 */
+            font-size: 0.85em;
+        }
+    </style>
+
+    <div th:if="*{memberPassword != null}">
+        <label>새 비밀번호:</label>
+        <input type="password" name="memberPassword" placeholder="변경 시에만 입력하세요">
+        <p th:if="${#fields.hasErrors('memberPassword')}" th:errors="*{memberPassword}" style="color:red;"></p>
+    </div>
+
+    <div th:unless="*{memberPassword != null}">
+        <p style="color: blue;">소셜 계정은 닉네임만 수정 가능합니다.</p>
+    </div>
+
+    <button type="submit">수정하기</button>
+    <a href="/board/">취소</a>
+</form>
+</body>
+</html>

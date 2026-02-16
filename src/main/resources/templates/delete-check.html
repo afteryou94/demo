@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>삭제 비밀번호 확인</title>
+</head>
+<body>
+<h2>삭제를 위해 비밀번호를 입력해주세요.</h2>
+<form action="/board/delete" method="post">
+  <input type="hidden" name="id" th:value="${id}">
+  <input type="password" name="boardPass" placeholder="비밀번호 입력" required>
+  <button type="submit">삭제하기</button>
+</form>
+<p th:if="${errorMessage}" th:text="${errorMessage}" style="color: red;"></p>
+</body>
+</html>
