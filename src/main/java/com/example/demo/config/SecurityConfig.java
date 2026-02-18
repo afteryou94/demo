@@ -43,8 +43,8 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(options -> options.disable()))
                 .authorizeHttpRequests(authorize -> authorize
                         // 명시적으로 /board/delete, /board/update를 허용 목록에 추가
-                        .requestMatchers("/board/**").permitAll()
-                        .requestMatchers("/", "/member/**", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/board/**", "/board/paging", "/board/{id}", "/css/**", "/js/**").permitAll()
+                        .requestMatchers( "/member/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 // 3. 로그인 설정 (여기가 질문하신 부분입니다!)

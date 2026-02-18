@@ -58,6 +58,21 @@ public class BoardDTO { // (데이터 저장 공간)
 
         return boardDTO; // 4. 데이터가 꽉 찬 가방을 반환한다.
     }
+        // BoardDTO.java 내부에 추가
+
+        // 1. 기본 생성자 (기존 코드 유지를 위해 반드시 필요)
+        public BoardDTO() {
+        }
+
+        // 2. 페이징 목록용 생성자 (내용(Contents)은 제외하여 메모리 절약)
+        public BoardDTO(Long id, String boardWriter, String boardTitle, int boardHits, LocalDateTime createdAt) {
+            this.id = id;
+            this.boardWriter = boardWriter;
+            this.boardTitle = boardTitle;
+            this.boardHits = boardHits;
+            // 날짜 가공 메서드 활용
+            this.boardCreatedAt = dateFormat(createdAt);
+        }
 
 
     }

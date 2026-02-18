@@ -5,6 +5,7 @@ import com.example.demo.dto.CommentDTO;
 import com.example.demo.service.CommentService;
 import com.example.demo.service.BoardService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +13,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import jakarta.servlet.http.HttpSession; // HttpSession을 위해 필요
 import jakarta.validation.Valid; // 추가
 import org.springframework.validation.BindingResult; // 추가
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 import java.util.List;
 
@@ -50,15 +54,15 @@ public String save(@Valid @ModelAttribute BoardDTO boardDTO, BindingResult bindi
     return "redirect:/board/";
 }
 
-    //3. 목록 및 상세 조회 (Read)
-    @GetMapping("/") //주소: GET /board/
-    public String findall(Model model) {
-        // DB에서 모든 게시글 데이터를 가져와서 리스트에 담음
-        List<BoardDTO> boardDTOList = boardService.findAll();
-        // 화면(HTML)으로 데이터를 전달하기 위해 모델에 담음 (이름: boardList)
-        model.addAttribute("boardList", boardDTOList);
-        return "list"; // templates/list.html 파일을 보여줌
-    }
+    //3. 목록 및 상세 조회 (Read), 페이징 기능 구현 전 board
+//    @GetMapping("/") //주소: GET /board/
+//    public String findall(Model model) {
+//        // DB에서 모든 게시글 데이터를 가져와서 리스트에 담음
+//        List<BoardDTO> boardDTOList = boardService.findAll();
+//        // 화면(HTML)으로 데이터를 전달하기 위해 모델에 담음 (이름: boardList)
+//        model.addAttribute("boardList", boardDTOList);
+//        return "list"; // templates/list.html 파일을 보여줌
+//    }
     //4. 수정 및 삭제 (Update & Delete)
         // BoardController.java
         @GetMapping("/{id}")
@@ -153,6 +157,26 @@ public String save(@Valid @ModelAttribute BoardDTO boardDTO, BindingResult bindi
                 // [중요] 여기서 튕길 때 /board/가 아니라 /member/login으로 가고 있지 않은지 확인!
                 return "redirect:/board/" + id + "?error=auth";
             }
+        }
+
+        @GetMapping("/")
+        public String paging(@PageableDefault(page = 1) Pageable pageable,
+                             @RequestParam(value = "type", required = false) String type,
+                             @RequestParam(value = "keyword", required = false) String keyword,Model model) {
+            Page<BoardDTO> boardList = boardService.paging(pageable, type, keyword);
+
+            // 하단에 보여줄 페이지 번호 개수 (예: 1 2 3 4 5)
+            int blockLimit = 5;
+            int startPage = (((int)(Math.ceil((double)pageable.getPageNumber() / blockLimit))) - 1) * blockLimit + 1;
+            int endPage = ((startPage + blockLimit - 1) < boardList.getTotalPages()) ? startPage + blockLimit - 1 : boardList.getTotalPages();
+
+            model.addAttribute("boardList", boardList); // 10개의 글 데이터
+            model.addAttribute("startPage", startPage); // 시작 페이지 번호
+            model.addAttribute("endPage", endPage);     // 마지막 페이지 번호
+            model.addAttribute("type", type);       // 검색 후에도 입력한 검색 타입을 유지하기 위해
+            model.addAttribute("keyword", keyword); // 검색 후에도 검색어를 유지하기 위해
+
+            return "list"; // paging.html 생성 필요
         }
 
 

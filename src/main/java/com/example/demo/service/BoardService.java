@@ -11,6 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
     //1. 클래스 설정
 @Service // 이 클래스가 서비스 레이어임을 스프링에 등록
 @RequiredArgsConstructor // final 붙은 boardRepository를 자동으로 주입(연결)해줌
@@ -110,4 +114,34 @@ public class BoardService {
 
             boardEntity.update(boardDTO); // 기존 update 메서드 호출
         }
+
+// BoardService.java 에 추가/수정
+
+        public Page<BoardDTO> paging(Pageable pageable, String type, String keyword) {
+            int page = pageable.getPageNumber() - 1;
+            int pageLimit = 10;
+            Page<BoardEntity> boardEntities;
+
+            // 검색 조건이 있는 경우
+            if (keyword != null && !keyword.isEmpty()) {
+                if ("title".equals(type)) {
+                    boardEntities = boardRepository.findByBoardTitleContaining(keyword, PageRequest.of(page, pageLimit, Sort.by(Sort.Direction.DESC, "id")));
+                } else if ("contents".equals(type)) {
+                    boardEntities = boardRepository.findByBoardContentsContaining(keyword, PageRequest.of(page, pageLimit, Sort.by(Sort.Direction.DESC, "id")));
+                } else if ("writer".equals(type)) {
+                    boardEntities = boardRepository.findByBoardWriterContaining(keyword, PageRequest.of(page, pageLimit, Sort.by(Sort.Direction.DESC, "id")));
+                } else { // "all" (제목+내용)
+                    boardEntities = boardRepository.findByBoardTitleContainingOrBoardContentsContaining(keyword, keyword, PageRequest.of(page, pageLimit, Sort.by(Sort.Direction.DESC, "id")));
+                }
+            } else {
+                // 검색 조건이 없는 경우 기존 페이징 로직
+                boardEntities = boardRepository.findAll(PageRequest.of(page, pageLimit, Sort.by(Sort.Direction.DESC, "id")));
+            }
+
+            return boardEntities.map(board -> new BoardDTO(
+                    board.getId(), board.getBoardWriter(), board.getBoardTitle(), board.getBoardHits(), board.getCreatedAt()
+            ));
+        }
+
+
 }
