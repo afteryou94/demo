@@ -5,15 +5,23 @@ import com.example.demo.domain.Role;
 import com.example.demo.dto.MemberDTO;
 import com.example.demo.service.CustomOAuth2UserService;
 import com.example.demo.service.MemberService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
 
 
 @Configuration
@@ -28,6 +36,28 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
 
     private final MemberService memberService;
+    // 1. 클래스 상단에 필드 추가
+
+    // CustomAuthenticationSuccessHandler.java (SecurityConfig에서 사용)
+    @Component
+    public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+        @Override
+        public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+                                            Authentication authentication) throws IOException {
+
+            CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
+            String nickname = oAuth2User.getNickname(); // DB나 OAuth2User에서 가져온 닉네임
+
+            // 닉네임이 없거나 임시 값(이름 등)이라면 설정 페이지로 보냄
+            if (nickname == null || nickname.isEmpty() || nickname.startsWith("TEMP_")) {
+                response.sendRedirect("/member/set-nickname");
+            } else {
+                response.sendRedirect("/board/");
+            }
+        }
+    }
+
     // SecurityConfig 클래스 내부에 추가
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
@@ -43,8 +73,9 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(options -> options.disable()))
                 .authorizeHttpRequests(authorize -> authorize
                         // 명시적으로 /board/delete, /board/update를 허용 목록에 추가
-                        .requestMatchers("/board/**", "/board/paging", "/board/{id}", "/css/**", "/js/**").permitAll()
-                        .requestMatchers( "/member/**").authenticated()
+                        .requestMatchers("/board/**", "/board/paging", "/board/{id}", "/css/**", "/js/**","member/save", "/member/set-nickname","/member/mail-auth",
+                                "/member/id-check", "/member/login", "/member/nickname-check").permitAll()
+                        .requestMatchers( "/member/update", "/member/delete", "/member/my-page").authenticated()
                         .anyRequest().authenticated()
                 )
                 // 3. 로그인 설정 (여기가 질문하신 부분입니다!)
@@ -77,12 +108,13 @@ public class SecurityConfig {
                         .invalidateHttpSession(true) // 세션 날리기
                 )
 
-                // 5. 소셜 로그인 설정
+                // 5. 소셜 로그인 설정 (수정본)
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService) // 소셜 로그인 성공 후 처리를 담당할 서비스 등록
+                                .userService(customOAuth2UserService)
                         )
-                        .defaultSuccessUrl("/board/", true) // 로그인 성공 시 이동할 주소
+                        // [중요] defaultSuccessUrl을 삭제하거나 주석 처리하고, 아래 핸들러를 등록해야 합니다!
+                        .successHandler(new CustomAuthenticationSuccessHandler())
                 );
 
         return http.build();

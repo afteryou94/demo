@@ -24,7 +24,7 @@ public class MemberEntity extends BaseTimeEntity { // 가입 시간 기록을 �
     @Column(nullable = true) // 소셜 로그인 사용자는 비밀번호가 없으므로 null 허용
     private String memberPassword;
 
-    @Column(unique = false, nullable = false, length = 50) // 중복 허용 및 길이 확대
+    @Column(unique = true, nullable = false, length = 50) // 중복 허용 및 길이 확대
     private String memberNickname;
 
     @Column(unique = true, nullable = false, length = 100)

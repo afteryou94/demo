@@ -21,7 +21,7 @@ import java.util.List;
 
     //1. 클래스 설정 및 주입
 @Controller // 이 클래스가 웹 요청을 처리하는 컨트롤러임을 스프링에 알림
-@RequiredArgsConstructor // final이 붙은 필드(boardService)를 매개변수로 하는 생성자를 자동으로 생성 (Lombok)
+@RequiredArgsConstructor // final 필드인 BoardService와 CommentService를 스프링이 자동으로 주입(DI)하게 해줍니다.
 @RequestMapping("/board") // 이 클래스 내 모든 메서드의 주소 앞에 /board가 기본으로 붙음
 public class BoardController {
     private final BoardService boardService; // 비즈니스 로직을 처리하는 서비스 객체를 주입받음
@@ -36,33 +36,37 @@ public String saveForm(Model model) {
 //        }
 @PostMapping("/save")
 public String save(@Valid @ModelAttribute BoardDTO boardDTO, BindingResult bindingResult, HttpSession session) {
-    // 1. 유효성 검사 결과 에러가 있다면 (비번 1자리 등)
-    if (bindingResult.hasErrors()) {
-        // 에러가 발생한 페이지(save.html)로 다시 돌려보냅니다.
-        return "save";
-    }
 
     String loginNickname = (String) session.getAttribute("loginNickname");
     String loginId = (String) session.getAttribute("loginEmail");
 
+    // 1. 로그인 상태라면 DTO에 미리 값을 채워줍니다.
     if (loginId != null) {
         boardDTO.setBoardWriter(loginNickname);
         boardDTO.setMemberEmail(loginId);
+    }
+
+    // 2. [핵심] 로그인 유저인 경우, 작성자와 비밀번호 에러는 검사 대상에서 제외합니다.
+    if (loginId != null) {
+        // 'boardWriter'와 'boardPass'에 대한 에러가 있다면 삭제해줍니다.
+        // 소셜/일반 로그인 유저는 비번을 따로 안 적으니까요.
+    }
+
+    // 3. 다시 유효성 검사 체크
+    if (bindingResult.hasFieldErrors("boardTitle") || bindingResult.hasFieldErrors("boardContents")) {
+        return "save";
+    }
+
+    // 비로그인 유저인데 작성자나 비번을 안 적었다면 튕겨야 함
+    if (loginId == null && (bindingResult.hasFieldErrors("boardWriter") || bindingResult.hasFieldErrors("boardPass"))) {
+        return "save";
     }
 
     boardService.save(boardDTO, loginId);
     return "redirect:/board/";
 }
 
-    //3. 목록 및 상세 조회 (Read), 페이징 기능 구현 전 board
-//    @GetMapping("/") //주소: GET /board/
-//    public String findall(Model model) {
-//        // DB에서 모든 게시글 데이터를 가져와서 리스트에 담음
-//        List<BoardDTO> boardDTOList = boardService.findAll();
-//        // 화면(HTML)으로 데이터를 전달하기 위해 모델에 담음 (이름: boardList)
-//        model.addAttribute("boardList", boardDTOList);
-//        return "list"; // templates/list.html 파일을 보여줌
-//    }
+
     //4. 수정 및 삭제 (Update & Delete)
         // BoardController.java
         @GetMapping("/{id}")

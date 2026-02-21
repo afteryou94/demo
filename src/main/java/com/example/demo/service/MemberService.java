@@ -115,4 +115,28 @@ public class MemberService implements org.springframework.security.core.userdeta
 
         // @Transactional이 있으므로 별도의 repository.save() 호출 없이도 자동 저장됩니다.
     }
+
+    // MemberService.java
+
+    @Transactional // 데이터 수정을 위해 필수!
+    public void updateNickname(String loginId, String memberNickname) {
+        // memberId(또는 Email)로 기존 회원 찾기
+        MemberEntity memberEntity = memberRepository.findByMemberEmail(loginId)
+                .orElseThrow(() -> new RuntimeException("회원을 찾을 수 없습니다."));
+
+        // 닉네임 변경 (Entity에 @Setter가 있거나 별도의 update 메서드가 있어야 함)
+        memberEntity.setMemberNickname(memberNickname);
+
+        // @Transactional이 있으면 save를 명시적으로 안 해도 감지하여 업데이트되지만, 안전하게 적어줌
+        memberRepository.save(memberEntity);
+    }
+
+    public String nicknameCheck(String memberNickname) {
+        Optional<MemberEntity> byMemberNickname = memberRepository.findByMemberNickname(memberNickname);
+        if (byMemberNickname.isEmpty()) {
+            return "ok"; // 사용 가능
+        } else {
+            return "no"; // 중복됨
+        }
+    }
 }

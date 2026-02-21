@@ -124,4 +124,36 @@ public class MemberController {
 
         return "redirect:/board/"; // 수정 완료 후 게시판 목록으로
     }
+
+    // MemberController.java
+
+    // 닉네임 설정 페이지 이동 (GET)
+    @GetMapping("/set-nickname")
+    public String setNicknameForm() {
+        return "set-nickname"; // set-nickname.html 페이지를 보여줌
+    }
+
+    // 닉네임 저장 처리 (POST)
+    @PostMapping("/set-nickname")
+    public String setNickname(@RequestParam("memberNickname") String memberNickname,
+                              HttpSession session) {
+        // 1. 세션에서 현재 로그인한 사용자의 식별자(이메일 등)를 가져옴
+        String loginId = (String) session.getAttribute("loginEmail");
+
+        if (loginId != null) {
+            // 2. 서비스에 닉네임 업데이트 요청
+            memberService.updateNickname(loginId, memberNickname);
+
+            // 3. 세션의 닉네임 정보도 최신화 (헤더 등에 표시하기 위함)
+            session.setAttribute("loginNickname", memberNickname);
+        }
+
+        return "redirect:/board/"; // 설정 완료 후 메인으로 이동
+    }
+
+    @PostMapping("/nickname-check")
+    public @ResponseBody String nicknameCheck(@RequestParam("memberNickname") String memberNickname) {
+        String checkResult = memberService.nicknameCheck(memberNickname);
+        return checkResult; // "ok" 또는 "no"
+    }
 }

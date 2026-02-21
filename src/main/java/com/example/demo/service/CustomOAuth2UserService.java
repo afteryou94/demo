@@ -1,4 +1,5 @@
 package com.example.demo.service;
+import com.example.demo.config.CustomOAuth2User;
 import com.example.demo.entity.MemberEntity;
 import com.example.demo.repository.MemberRepository;
 import jakarta.servlet.http.HttpSession;
@@ -44,16 +45,36 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         httpSession.setAttribute("loginNickname", member.getMemberNickname()); // DB에 저장된 닉네임
         httpSession.setAttribute("loginId", member.getMemberId());         // 필요하다면 유지
 
-        return new DefaultOAuth2User(
-                Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
+        // CustomOAuth2UserService.java 일부
+        return new CustomOAuth2User(
+                Collections.singleton(new SimpleGrantedAuthority(member.getRole().name())),
                 attributes.getAttributes(),
-                attributes.getNameAttributeKey());
+                attributes.getNameAttributeKey(),
+                member.getMemberNickname() // DB에서 가져온 닉네임
+        );
     }
 
-    private MemberEntity saveOrUpdate(com.example.demo.dto.OAuthAttributes attributes) {
+    // CustomOAuth2UserService.java 내부의 saveOrUpdate 메서드 수정
+
+    private MemberEntity saveOrUpdate(OAuthAttributes attributes) {
         MemberEntity member = memberRepository.findByMemberEmail(attributes.getEmail())
-                .map(entity -> entity.update(attributes.getName())) // 있으면 업데이트
-                .orElse(attributes.toEntity()); // 없으면 신규 생성
+                .map(entity -> {
+                    // 이미 존재하는 회원이면 이름만 업데이트 (닉네임은 건드리지 않음)
+                    return entity.update(attributes.getName());
+                })
+                .orElseGet(() -> {
+                    // 신규 회원이라면 엔티티를 새로 만드는데,
+                    // 이때 memberNickname에 중복될 수 있는 '이름' 대신
+                    // 임시로 '이메일'이나 '고유 식별자'를 넣어줍니다.
+                    MemberEntity newMember = attributes.toEntity();
+
+                    // 닉네임 중복 에러를 피하기 위한 임시 닉네임 설정 (중요!)
+                    // 예: "TEMP_이메일앞부분" 또는 "UUID"
+                    String tempNickname = "TEMP_" + attributes.getEmail().split("@")[0];
+                    newMember.setMemberNickname(tempNickname);
+
+                    return newMember;
+                });
 
         return memberRepository.save(member);
     }
