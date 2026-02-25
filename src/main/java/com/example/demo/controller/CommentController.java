@@ -19,21 +19,26 @@ import java.util.List;
 public class CommentController {
     private final CommentService commentService;
 
+    /**
+     * 1. 댓글 저장 (Ajax)
+     * ResponseEntity를 사용하여 데이터와 함께 HTTP 상태 코드를 세밀하게 반환합니다.
+     */
     @PostMapping("/save")
     public ResponseEntity save(@Valid @ModelAttribute CommentDTO commentDTO,
                                BindingResult bindingResult,
                                HttpSession session) {
 
-        // 1. 유효성 검사 (공백, 글자수 등)
+        // 1-1. 유효성 검사: 댓글 내용이 없거나 형식이 틀리면 에러 메시지 반환
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(bindingResult.getFieldError().getDefaultMessage(), HttpStatus.BAD_REQUEST);
         }
 
+        // 1-2. 세션에서 로그인 정보 추출
         String loginEmail = (String) session.getAttribute("loginEmail");
         String loginNickname = (String) session.getAttribute("loginNickname");
 
+        // 1-3. 로그인 상태라면 세션의 검증된 닉네임과 이메일을 강제로 주입 (보안 강화)
         if (loginEmail != null) {
-            // 로그인 상태: 세션 정보 우선
             commentDTO.setMemberEmail(loginEmail);
             commentDTO.setCommentWriter(loginNickname);
         }
@@ -52,25 +57,33 @@ public class CommentController {
         }
     }
 
+    /**
+     * 2. 댓글 삭제 (Ajax)
+     */
     @PostMapping("/delete")
     public ResponseEntity delete(@RequestParam Long id,
                                  @RequestParam(required = false) String commentPass,
                                  HttpSession session) {
         String loginEmail = (String) session.getAttribute("loginEmail");
         try {
+            // 2-1. 서비스에서 권한 검증(본인 확인 또는 비번 확인) 후 삭제 진행
             commentService.delete(id, loginEmail, commentPass);
             return new ResponseEntity<>("삭제 성공", HttpStatus.OK);
         } catch (RuntimeException e) {
+            // 2-2. 권한이 없거나 비번이 틀리면 에러 메시지 반환
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 
+    /**
+     * 3. 댓글 수정 (Ajax)
+     */
     @PostMapping("/update")
     public ResponseEntity update(@Valid @ModelAttribute CommentDTO commentDTO,
                                  BindingResult bindingResult,
                                  HttpSession session) {
 
-        // 1. 공백 및 유효성 검사
+        // 3-1. 수정한 내용이 유효한지 검사
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(bindingResult.getFieldError().getDefaultMessage(), HttpStatus.BAD_REQUEST);
         }
@@ -78,6 +91,7 @@ public class CommentController {
         String loginEmail = (String) session.getAttribute("loginEmail");
 
         try {
+            // 3-2. 수정 권한 확인 후 업데이트
             commentService.update(commentDTO, loginEmail);
             return new ResponseEntity<>("수정 성공", HttpStatus.OK);
         } catch (RuntimeException e) {

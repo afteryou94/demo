@@ -18,57 +18,68 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+// UserDetailsService: 스프링 시큐리티가 로그인을 처리할 때 사용하는 인터페이스를 구현합니다.
 public class MemberService implements org.springframework.security.core.userdetails.UserDetailsService {
     private final MemberRepository memberRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder passwordEncoder; // 비밀번호 암호화를 위한 객체
 
-    // 2. 이 메서드를 반드시 오버라이드해야 시큐리티가 로그인을 처리합니다.
+    /**
+     * [스프링 시큐리티 전용] 사용자 인증 메서드
+     * 시큐리티가 로그인을 시도할 때 DB에서 사용자 정보를 가져오는 역할을 합니다.
+     */
     @Override
     public org.springframework.security.core.userdetails.UserDetails loadUserByUsername(String memberId)
             throws org.springframework.security.core.userdetails.UsernameNotFoundException {
 
-        // DB에서 아이디로 사용자 조회
+        // 1. DB에서 아이디로 사용자를 조회합니다.
         MemberEntity memberEntity = memberRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException("해당 아이디를 찾을 수 없습니다: " + memberId));
 
-        // 시큐리티 전용 User 객체를 만들어 반환
+        // 2. 시큐리티가 이해할 수 있는 UserDetails 객체(User)를 생성하여 반환합니다.
+        // 이때 비밀번호는 암호화된 상태여야 시큐리티가 비교할 수 있습니다.
         return org.springframework.security.core.userdetails.User.builder()
                 .username(memberEntity.getMemberId())
                 .password(memberEntity.getMemberPassword()) // 암호화된 비밀번호
-                .roles(memberEntity.getRole().name())       // ROLE_USER 등
+                .roles(memberEntity.getRole().name())       // 권한 부여 (USER, ADMIN 등)
                 .build();
     }
-    // 1. 회원가입 저장
+    /**
+     * 1. 회원가입 저장
+     */
     public void save(MemberDTO memberDTO) {
-        // 저장 전 비밀번호 암호화 필수!
+        // 1-1. 저장 전 비밀번호 암호화는 필수입니다! (BCrypt 사용)
         String encodedPassword = passwordEncoder.encode(memberDTO.getMemberPassword());
         memberDTO.setMemberPassword(encodedPassword);
 
+        // 1-2. DTO를 DB에 저장할 엔티티로 변환합니다.
         MemberEntity memberEntity = MemberEntity.toMemberEntity(memberDTO);
 
-        // 일반 회원가입이므로 Role을 ROLE_USER로 명시해주는 것이 안전합니다.
+        // 1-3. 일반 회원가입 사용자에게 기본 권한(ROLE_USER)을 부여합니다.
         memberEntity.setRole(Role.USER);
 
+        // 1-4. DB 저장
         memberRepository.save(memberEntity);
     }
 
-    // 2. 아이디 중복 확인
+    /**
+     * 2. 아이디 중복 확인 (Ajax 전용)
+     */
     public String idCheck(String memberId) {
         Optional<MemberEntity> byMemberId = memberRepository.findByMemberId(memberId);
         if (byMemberId.isPresent()) {
-            // 이미 값이 있으면 사용할 수 없음
-            return null;
+            return null; // 이미 있으면 사용 불가
         } else {
-            // 값이 없으면 사용 가능
-            return "ok";
+            return "ok"; // 없으면 사용 가능
         }
     }
-    // 3. 로그인 로직
+    /**
+     * 3. 로그인 로직 (시큐리티 미사용 시 수동 로그인용)
+     */
     public MemberDTO login(MemberDTO memberDTO) {
         Optional<MemberEntity> byMemberId = memberRepository.findByMemberId(memberDTO.getMemberId());
         if (byMemberId.isPresent()) {
             MemberEntity memberEntity = byMemberId.get();
-            // matches 메서드를 사용해서 (사용자 입력값, DB 암호화값)을 비교해야 합니다.
+            // passwordEncoder.matches: (평문 비밀번호, 암호화된 비밀번호)를 대조해줍니다.
             if (passwordEncoder.matches(memberDTO.getMemberPassword(), memberEntity.getMemberPassword())) {
                 return MemberDTO.toMemberDTO(memberEntity);
             }
@@ -76,65 +87,71 @@ public class MemberService implements org.springframework.security.core.userdeta
         return null;
     }
 
-    //레포지토리에서 가져온 Entity를 컨트롤러가 쓰기 편한 DTO로 변환해서 반환
+    /**
+     * 4. 레포지토리에서 가져온 Entity를 컨트롤러가 쓰기 편한 DTO로 변환해서 반환
+    */
     public MemberDTO findByEmail(String loginEmail) {
-        // 1. DB에서 이메일로 엔티티 조회
+        // 4-1. DB에서 이메일로 엔티티 조회
         Optional<MemberEntity> optionalMemberEntity = memberRepository.findByMemberEmail(loginEmail);
 
         if (optionalMemberEntity.isPresent()) {
-            // 2. 엔티티가 있으면 DTO로 변환하여 반환
+            // 4-2. 엔티티가 있으면 DTO로 변환하여 반환
             return MemberDTO.toMemberDTO(optionalMemberEntity.get());
         } else {
-            // 3. 없으면 null 반환 (또는 예외 처리)
+            // 4-3. 없으면 null 반환 (또는 예외 처리)
             return null;
         }
     }
 
-    // MemberService.java에 추가
+    /**
+     * 5. 아이디로 사용자 찾기 (회원 정보 수정 폼 데이터 로드용)
+     */
     public MemberDTO findByMemberId(String memberId) {
         return memberRepository.findByMemberId(memberId)
                 .map(MemberDTO::toMemberDTO)
                 .orElse(null);
     }
 
-    // 회원정보 수정
-    @Transactional
+    /**
+     * 6. 회원 정보 수정 로직
+     */
+    @Transactional // 더티 체킹(변경 감지)을 활용한 자동 업데이트
     public void update(MemberUpdateDTO updateDTO) {
+        // 6-1. 수정할 회원을 찾아오기
         MemberEntity memberEntity = memberRepository.findById(updateDTO.getId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 회원이 존재하지 않습니다."));
 
-        // 1. 닉네임 업데이트 (공통)
+        // 6-2. 닉네임 업데이트
         memberEntity.setMemberNickname(updateDTO.getMemberNickname());
 
-        // 2. 비밀번호 업데이트 (일반 사용자이며, 비밀번호를 입력했을 경우에만)
-        // DB에 비밀번호가 있고(일반사용자), 입력폼이 비어있지 않다면 실행
+        // 6-3. 비밀번호 업데이트 (비밀번호를 입력한 경우에만 암호화해서 변경)
         if (memberEntity.getMemberPassword() != null && !updateDTO.getMemberPassword().isEmpty()) {
             String encryptedPassword = passwordEncoder.encode(updateDTO.getMemberPassword());
             memberEntity.setMemberPassword(encryptedPassword);
         }
-
-        // @Transactional이 있으므로 별도의 repository.save() 호출 없이도 자동 저장됩니다.
+        // @Transactional이 걸려있으므로, 트랜잭션이 끝날 때 변경된 사항이 DB에 자동으로 반영됩니다.
     }
 
-    // MemberService.java
-
-    @Transactional // 데이터 수정을 위해 필수!
+    /**
+     * 7. [소셜 로그인] 닉네임 설정 및 업데이트
+     */
+    @Transactional
     public void updateNickname(String loginId, String memberNickname) {
-        // memberId(또는 Email)로 기존 회원 찾기
         MemberEntity memberEntity = memberRepository.findByMemberEmail(loginId)
                 .orElseThrow(() -> new RuntimeException("회원을 찾을 수 없습니다."));
 
-        // 닉네임 변경 (Entity에 @Setter가 있거나 별도의 update 메서드가 있어야 함)
         memberEntity.setMemberNickname(memberNickname);
-
-        // @Transactional이 있으면 save를 명시적으로 안 해도 감지하여 업데이트되지만, 안전하게 적어줌
+        // 수동으로 save를 호출해줘도 무방합니다.
         memberRepository.save(memberEntity);
     }
 
+    /**
+     * 8. 닉네임 중복 확인 (Ajax 전용)
+     */
     public String nicknameCheck(String memberNickname) {
         Optional<MemberEntity> byMemberNickname = memberRepository.findByMemberNickname(memberNickname);
         if (byMemberNickname.isEmpty()) {
-            return "ok"; // 사용 가능
+            return "ok"; // 중복되지 않음
         } else {
             return "no"; // 중복됨
         }

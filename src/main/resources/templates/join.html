@@ -120,12 +120,12 @@ success: function(res) {
     // res === "ok" 대신 includes를 써서 "ok"가 포함되어 있는지만 봅니다.
     if (res.replace(/\s/g, "") === "ok") {
         checkResult.className = "valid-msg mt-1 text-success";
-        checkResult.innerText = "사용 가능한 닉네임입니다.";
-        isNicknameChecked = true;
+        checkResult.innerText = "사용 가능한 ID입니다.";
+        isIdChecked = true;
     } else {
         checkResult.className = "valid-msg mt-1 text-danger";
-        checkResult.innerText = "이미 사용중인 닉네임입니다.";
-        isNicknameChecked = false;
+        checkResult.innerText = "이미 사용중인 ID입니다.";
+        isIdChecked = false;
     }
     updateSubmitButton();
 }
