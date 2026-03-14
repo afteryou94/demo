@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
   <meta charset="UTF-8">
   <title>회원가입 - My Board</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -8,6 +10,7 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
   <style>
+    /* 화면 중앙 정렬과 에러 메시지 스타일을 지정합니다. */
     body { background-color: #f8f9fa; }
     .join-container { max-width: 500px; margin-top: 50px; }
     .guide-text { font-size: 0.8rem; color: #6c757d; margin-top: 4px; }
@@ -21,40 +24,39 @@
     <div class="card-body p-5">
       <h2 class="text-center fw-bold mb-4">회원가입</h2>
 
-      <form action="/member/save" method="post" id="saveForm">
+      <form th:action="@{/member/save}" th:object="${memberDTO}" method="post" id="saveForm">
 
         <div class="mb-3">
           <label for="memberId" class="form-label fw-bold">아이디</label>
-          <input type="text" name="memberId" class="form-control" id="memberId"
+          <input type="text" th:field="*{memberId}" class="form-control" id="memberId"
                  maxlength="16" placeholder="아이디를 입력하세요" onblur="idCheck()">
+          <div th:if="${#fields.hasErrors('memberId')}" th:errors="*{memberId}" class="text-danger small mt-1"></div>
           <div id="id-check-result" class="valid-msg mt-1"></div>
         </div>
 
         <div class="mb-3">
           <label for="memberPassword" class="form-label fw-bold">비밀번호</label>
-          <input type="password" name="memberPassword" class="form-control" id="memberPassword" placeholder="비밀번호 입력">
+          <input type="password" th:field="*{memberPassword}" class="form-control" id="memberPassword" placeholder="비밀번호 입력" oninput="pwCheck()">
+          <div th:if="${#fields.hasErrors('memberPassword')}" th:errors="*{memberPassword}" class="text-danger small mt-1"></div>
           <div id="pw-check-msg" class="valid-msg mt-1"></div>
-          <small class="guide-text d-block">
-            영문 대 소문자, 숫자, 특수문자를 포함하여 8~16자를 사용하세요.
-          </small>
+          <small class="guide-text d-block">영문 대 소문자, 숫자, 특수문자를 포함하여 8~16자를 사용하세요.</small>
         </div>
 
         <div class="mb-3">
           <label for="memberNickname" class="form-label fw-bold">닉네임</label>
-          <input type="text" name="memberNickname" class="form-control" id="memberNickname"
+          <input type="text" th:field="*{memberNickname}" class="form-control" id="memberNickname"
                  placeholder="닉네임 입력" onblur="nicknameCheck()">
+          <div th:if="${#fields.hasErrors('memberNickname')}" th:errors="*{memberNickname}" class="text-danger small mt-1"></div>
           <div id="nickname-check-result" class="valid-msg mt-1"></div>
-          <small class="guide-text d-block">
-            공백 제외 2~10자를 사용하세요.
-          </small>
         </div>
 
         <div class="mb-3">
           <label for="memberEmail" class="form-label fw-bold">이메일</label>
           <div class="input-group">
-            <input type="email" name="memberEmail" class="form-control" id="memberEmail" placeholder="example@email.com">
+            <input type="email" th:field="*{memberEmail}" class="form-control" id="memberEmail" placeholder="example@email.com">
             <button class="btn btn-outline-secondary" type="button" onclick="sendEmail()">인증번호 전송</button>
           </div>
+          <div th:if="${#fields.hasErrors('memberEmail')}" th:errors="*{memberEmail}" class="text-danger small mt-1"></div>
         </div>
 
         <div class="mb-4">
@@ -79,67 +81,104 @@
 </div>
 
 <script th:inline="javascript">
-  let isIdChecked = false;
-  let isEmailAuthChecked = false;
-  let isNicknameChecked = false;
-  let serverAuthCode = "";
+  /* [상태 변수 선언] */
+  let isIdChecked = false;         // 아이디 체크 완료 여부
+  let isPasswordChecked = false;   // 비밀번호 체크 완료 여부
+  let isEmailAuthChecked = false;  // 이메일 인증 완료 여부
+  let isNicknameChecked = false;   // 닉네임 체크 완료 여부
+  let serverAuthCode = "";         // 서버 인증번호 저장
 
-  // [수정] 통합된 버튼 활성화 제어 함수 (하나만 두세요)
+  /**
+   * [함수: 가입 버튼 상태 업데이트]
+   * 모든 체크 항목이 true일 때만 버튼 활성화
+   */
   const updateSubmitButton = () => {
     const submitBtn = document.getElementById("submitBtn");
-    console.log("상태체크 - ID:", isIdChecked, "Email:", isEmailAuthChecked, "Nick:", isNicknameChecked);
 
-    if (isIdChecked && isEmailAuthChecked && isNicknameChecked) {
+    // 디버깅용 로그
+    console.log("상태 - ID:", isIdChecked, "PW:", isPasswordChecked, "Email:", isEmailAuthChecked, "Nick:", isNicknameChecked);
+
+    if (isIdChecked && isPasswordChecked && isEmailAuthChecked && isNicknameChecked) {
         submitBtn.disabled = false;
     } else {
         submitBtn.disabled = true;
     }
   };
 
-  // 1. 아이디 중복 체크
+  /**
+   * [함수: 1. 아이디 유효성 및 중복 체크]
+   */
   const idCheck = () => {
-      const id = document.getElementById("memberId").value;
-      const checkResult = document.getElementById("id-check-result");
+    const token = document.querySelector('meta[name="_csrf"]').content;
+    const header = document.querySelector('meta[name="_csrf_header"]').content;
+    const id = document.getElementById("memberId").value;
+    const checkResult = document.getElementById("id-check-result");
+    const idRegex = /^[a-zA-Z0-9]{6,16}$/;
 
-      if (id.length < 6) {
-          checkResult.className = "valid-msg mt-1 text-danger";
-          checkResult.innerText = "아이디는 6자 이상이어야 합니다.";
-          isIdChecked = false;
-          updateSubmitButton();
-          return;
-      }
-
-      $.ajax({
-          type: "post",
-          url: "/member/id-check",
-          data: { "memberId": id },
-          // success 부분 수정
-success: function(res) {
-    console.log("서버가 보낸 응답: [" + res + "]"); // 대괄호 안에 공백이 있는지 확인용
-
-    // res === "ok" 대신 includes를 써서 "ok"가 포함되어 있는지만 봅니다.
-    if (res.replace(/\s/g, "") === "ok") {
-        checkResult.className = "valid-msg mt-1 text-success";
-        checkResult.innerText = "사용 가능한 ID입니다.";
-        isIdChecked = true;
-    } else {
+    if (!idRegex.test(id)) {
         checkResult.className = "valid-msg mt-1 text-danger";
-        checkResult.innerText = "이미 사용중인 ID입니다.";
+        checkResult.innerText = "6~16자의 영문 대소문자, 숫자만 사용 가능합니다. (공백 불가)";
         isIdChecked = false;
+        updateSubmitButton();
+        return;
     }
-    updateSubmitButton();
-}
-      });
+
+    $.ajax({
+        type: "post",
+        url: "/member/id-check",
+        data: { "memberId": id },
+        beforeSend: function(xhr) { xhr.setRequestHeader(header, token); },
+        success: function(res) {
+            if (res.replace(/\s/g, "") === "ok") {
+                checkResult.className = "valid-msg mt-1 text-success";
+                checkResult.innerText = "사용 가능한 ID입니다.";
+                isIdChecked = true;
+            } else {
+                checkResult.className = "valid-msg mt-1 text-danger";
+                checkResult.innerText = "이미 사용중인 ID입니다.";
+                isIdChecked = false;
+            }
+            updateSubmitButton();
+        }
+    });
   };
 
-  // 닉네임 중복 체크
+  /**
+   * [함수: 2. 비밀번호 실시간 유효성 체크]
+   */
+  function pwCheck() {
+    const password = document.getElementById("memberPassword").value;
+    const pwMsg = document.getElementById("pw-check-msg");
+    const pwRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/;
+
+    if (password.length === 0) {
+        pwMsg.innerText = "";
+        isPasswordChecked = false;
+    } else if (!pwRegex.test(password)) {
+        pwMsg.className = "valid-msg mt-1 text-danger";
+        pwMsg.innerText = "대/소문자, 숫자, 특수문자를 모두 포함하여 8~16자로 입력해주세요. (공백 불가)";
+        isPasswordChecked = false;
+    } else {
+        pwMsg.className = "valid-msg mt-1 text-success";
+        pwMsg.innerText = "안전한 비밀번호입니다.";
+        isPasswordChecked = true;
+    }
+    updateSubmitButton();
+  }
+
+  /**
+   * [함수: 3. 닉네임 유효성 및 중복 체크]
+   */
   const nicknameCheck = () => {
+    const token = document.querySelector('meta[name="_csrf"]').content;
+    const header = document.querySelector('meta[name="_csrf_header"]').content;
     const nickname = document.getElementById("memberNickname").value.trim();
     const checkResult = document.getElementById("nickname-check-result");
+    const nickRegex = /^[a-zA-Z0-9가-힣]{2,10}$/;
 
-    if (nickname.length < 2) {
+    if (!nickRegex.test(nickname)) {
         checkResult.className = "valid-msg mt-1 text-danger";
-        checkResult.innerText = "닉네임은 2자 이상이어야 합니다.";
+        checkResult.innerText = "특수문자와 공백 없이 2~10자로 입력해주세요.";
         isNicknameChecked = false;
         updateSubmitButton();
         return;
@@ -149,6 +188,7 @@ success: function(res) {
         type: "post",
         url: "/member/nickname-check",
         data: { "memberNickname": nickname },
+        beforeSend: function(xhr) { xhr.setRequestHeader(header, token); },
         success: function(res) {
             if (res.trim() === "ok") {
                 checkResult.className = "valid-msg mt-1 text-success";
@@ -164,41 +204,57 @@ success: function(res) {
     });
   };
 
-  // 2. 이메일 인증번호 발송
-  const sendEmail = () => {
-      const email = document.getElementById("memberEmail").value;
-      if(!email) {
-          alert("이메일을 입력해주세요.");
-          return;
-      }
-      $.ajax({
-          type: "post",
-          url: "/member/mail-auth",
-          data: { "memberEmail": email },
-          success: function(code) {
-              alert("인증번호가 발송되었습니다.");
-              serverAuthCode = code.toString();
-          }
-      });
-  };
+  /**
+   * [함수: 4. 이메일 인증 발송]
+   */
+  function sendEmail() {
+    const token = document.querySelector('meta[name="_csrf"]').content;
+    const header = document.querySelector('meta[name="_csrf_header"]').content;
+    const email = document.getElementById("memberEmail").value;
 
-  // 3. 인증번호 일치 확인
+    if(!email) {
+        alert("이메일을 입력해주세요.");
+        return;
+    }
+
+    $.ajax({
+        type: "post",
+        url: "/member/mail-auth",
+        data: { "memberEmail": email },
+        beforeSend: function(xhr) { xhr.setRequestHeader(header, token); },
+        success: function(res) {
+            if (res === "duplicate") {
+                alert("이미 사용 중인 이메일입니다. 다른 이메일을 입력해 주세요.");
+                $("#memberEmail").val("").focus();
+            } else {
+                alert("인증번호가 발송되었습니다.");
+                serverAuthCode = res.toString(); // 인증번호 저장
+            }
+        },
+        error: function(err) { alert("메일 발송 중 오류가 발생했습니다."); }
+    });
+  }
+
+  /**
+   * [함수: 5. 인증번호 확인]
+   */
   const checkAuthCode = () => {
-      const userCode = document.getElementById("authCode").value;
-      const resultMsg = document.getElementById("mail-check-result");
+    const userCode = document.getElementById("authCode").value;
+    const resultMsg = document.getElementById("mail-check-result");
 
-      if (userCode === serverAuthCode && serverAuthCode !== "") {
-          resultMsg.className = "valid-msg mt-1 text-success";
-          resultMsg.innerText = "인증되었습니다.";
-          isEmailAuthChecked = true;
-          document.getElementById("authCode").readOnly = true;
-      } else {
-          resultMsg.className = "valid-msg mt-1 text-danger";
-          resultMsg.innerText = "인증번호가 일치하지 않습니다.";
-          isEmailAuthChecked = false;
-      }
-      updateSubmitButton();
+    if (userCode === serverAuthCode && serverAuthCode !== "") {
+        resultMsg.className = "valid-msg mt-1 text-success";
+        resultMsg.innerText = "인증되었습니다.";
+        isEmailAuthChecked = true;
+        document.getElementById("authCode").readOnly = true;
+    } else {
+        resultMsg.className = "valid-msg mt-1 text-danger";
+        resultMsg.innerText = "인증번호가 일치하지 않습니다.";
+        isEmailAuthChecked = false;
+    }
+    updateSubmitButton();
   };
+</script>
 </script>
 </body>
 </html>

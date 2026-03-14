@@ -20,9 +20,10 @@ import java.time.LocalDateTime;
 //2. 필드 구성 (시간 데이터)
 public class BaseTimeEntity {
     @CreatedDate // 데이터가 처음 생성되어 DB에 저장될 때의 시간을 자동으로 기록
-    @Column(updatable = false) // 생성 시간은 수정되면 안 되므로, UPDATE 쿼리에서 제외함
+    @Column(nullable = false, updatable = false) // 생성 시간은 수정되면 안 되므로, UPDATE 쿼리에서 제외함
     private LocalDateTime createdAt;
 
-    @LastModifiedDate // 데이터가 수정될 때마다 그 시점의 시간을 자동으로 기록
+    @LastModifiedDate// 데이터가 수정될 때마다 그 시점의 시간을 자동으로 기록
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 }

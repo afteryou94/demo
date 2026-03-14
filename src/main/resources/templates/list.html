@@ -60,14 +60,19 @@
         </tbody>
     </table>
 
-    <div class="d-flex justify-content-between mt-3">
-        <button class="btn btn-secondary" onclick="joinReq()">회원가입</button>
-        <button class="btn btn-success" onclick="saveReq()">글작성</button>
+<!--    <div class="d-flex justify-content-between mt-3">-->
+<!--        <button class="btn btn-secondary" onclick="joinReq()">회원가입</button>-->
+<!--        <button class="btn btn-success" onclick="saveReq()">글작성</button>-->
+<!--    </div>-->
+    <div class="d-flex mt-3">
+        <button th:if="${session.loginEmail == null}" class="btn btn-secondary" onclick="joinReq()">회원가입</button>
+
+        <button class="btn btn-success ms-auto" onclick="saveReq()">글작성</button>
     </div>
 
     <div class="row justify-content-center mt-5">
         <div class="col-md-8">
-            <form action="/board/" method="get" class="input-group mb-3 shadow-sm">
+            <form th:action="@{/board/}" method="get" class="input-group mb-3 shadow-sm">
                 <select name="type" class="form-select" style="max-width: 130px;">
                     <option value="all" th:selected="${type == 'all'}">제목+내용</option>
                     <option value="title" th:selected="${type == 'title'}">제목</option>
@@ -83,10 +88,11 @@
     <nav aria-label="Page navigation" class="mt-4">
         <ul class="pagination justify-content-center">
             <li class="page-item">
-                <a class="page-link" th:href="@{/board/(page=1)}">First</a>
+                <a class="page-link" th:href="@{/board/(page=1, type=${type}, keyword=${keyword})}">First</a>
             </li>
+
             <li class="page-item" th:classappend="${boardList.first} ? 'disabled'">
-                <a class="page-link" th:href="${boardList.first} ? '#' : @{/board/(page=${boardList.number})}">Prev</a>
+                <a class="page-link" th:href="${boardList.first} ? '#' : @{/board/(page=${boardList.number}, type=${type}, keyword=${keyword})}">Prev</a>
             </li>
 
             <li class="page-item" th:each="page: ${#numbers.sequence(startPage, endPage)}"
@@ -95,10 +101,11 @@
             </li>
 
             <li class="page-item" th:classappend="${boardList.last} ? 'disabled'">
-                <a class="page-link" th:href="${boardList.last} ? '#' : @{/board/(page=${boardList.number + 2})}">Next</a>
+                <a class="page-link" th:href="${boardList.last} ? '#' : @{/board/(page=${boardList.number + 2}, type=${type}, keyword=${keyword})}">Next</a>
             </li>
+
             <li class="page-item">
-                <a class="page-link" th:href="@{/board/(page=${boardList.totalPages})}">Last</a>
+                <a class="page-link" th:href="@{/board/(page=${boardList.totalPages}, type=${type}, keyword=${keyword})}">Last</a>
             </li>
         </ul>
     </nav>

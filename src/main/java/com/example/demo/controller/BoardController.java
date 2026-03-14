@@ -35,7 +35,8 @@ public String saveForm(Model model) {
     //게시글 저장 로직
         //세션(Session)**과 **유효성 검사(Validation)**를 결합한 로직
         @PostMapping("/save")
-        public String save(@Valid @ModelAttribute BoardDTO boardDTO, BindingResult bindingResult, HttpSession session) {
+        public String save(@Valid @ModelAttribute BoardDTO boardDTO, BindingResult bindingResult,
+                           HttpSession session) {
             // 1. 현재 세션에서 로그인한 사용자의 닉네임과 이메일(ID)을 가져옵니다.
             String loginNickname = (String) session.getAttribute("loginNickname");
             String loginId = (String) session.getAttribute("loginEmail");
@@ -118,8 +119,8 @@ public String saveForm(Model model) {
         // 3-2. 실제 삭제 처리 (비밀번호 입력 후 삭제 버튼 클릭 시)
         @PostMapping("/delete")
         public String delete(@RequestParam("id") Long id,
-                             @RequestParam("boardPass") String boardPass,
-                             HttpSession session) {
+                             @RequestParam(value = "boardPass", required = false) String boardPass, // required=false 추가
+                             HttpSession session, Model model){
 
             // 세션에서 로그인 정보를 가져옴
             String loginEmail = (String) session.getAttribute("loginEmail");
@@ -129,6 +130,9 @@ public String saveForm(Model model) {
                 boardService.delete(id, loginEmail, boardPass);
                 return "redirect:/board/"; // 삭제 성공 시 목록으로 이동
             } catch (RuntimeException e) {
+                // 비밀번호가 틀린 경우 다시 입력 페이지로
+                model.addAttribute("id", id);
+                model.addAttribute("errorMessage", e.getMessage());
                 // 비밀번호가 틀려 서비스에서 예외(Exception)를 던진 경우, 에러 메시지와 함께 상세페이지 복귀
                 return "redirect:/board/" + id + "?error=auth";
             }
@@ -163,13 +167,15 @@ public String saveForm(Model model) {
 
         // 2-2. 실제 수정 처리 (수정 완료 버튼 클릭 시)
         @PostMapping("/update")
-        public String update(@ModelAttribute BoardDTO boardDTO, HttpSession session) {
+        public String update(@ModelAttribute BoardDTO boardDTO, HttpSession session, RedirectAttributes redirectAttributes) {
             String loginEmail = (String) session.getAttribute("loginEmail");
 
             try {
                 // 서비스 단에서 본인(이메일 비교) 또는 비로그인(비밀번호 비교) 검증 후 업데이트 수행
                 boardService.update(boardDTO, loginEmail, boardDTO.getBoardPass());
-                return "redirect:/board/" + boardDTO.getId(); // 수정 성공 시 상세 페이지로 이동
+                // redirect 경로의 {id} 자리에 boardDTO.getId() 값을 자동으로 채워줍니다.
+                redirectAttributes.addAttribute("id", boardDTO.getId());
+                return "redirect:/board/{id}";
             } catch (RuntimeException e) {
                 // 검증 실패(비밀번호 틀림 등) 시 에러 파라미터를 들고 목록으로 이동
                 return "redirect:/board/?error=auth";

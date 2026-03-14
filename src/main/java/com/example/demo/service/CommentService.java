@@ -22,16 +22,32 @@ public class CommentService {
      * 1. 댓글 저장
      * 게시글과 댓글의 연관 관계를 맺어주는 것이 핵심입니다.
      */
+//    public Long save(CommentDTO commentDTO) {
+//        // 1-1. 댓글이 달릴 부모 게시글이 존재하는지 먼저 확인합니다.
+//        BoardEntity boardEntity = boardRepository.findById(commentDTO.getBoardId()).orElse(null);
+//
+//        if (boardEntity != null) {
+//            // 1-2. DTO와 찾은 게시글 엔티티를 함께 넘겨 댓글 엔티티를 생성합니다. (연관 관계 매핑)
+//            CommentEntity commentEntity = CommentEntity.toSaveEntity(commentDTO, boardEntity);
+//            // 1-3. 저장 후 생성된 댓글의 ID를 반환합니다.
+//            return commentRepository.save(commentEntity).getId();
+//        }
+//        return null;
+//    }
+
     public Long save(CommentDTO commentDTO) {
-        // 1-1. 댓글이 달릴 부모 게시글이 존재하는지 먼저 확인합니다.
+        System.out.println("Service save 호출됨: " + commentDTO);
         BoardEntity boardEntity = boardRepository.findById(commentDTO.getBoardId()).orElse(null);
 
         if (boardEntity != null) {
-            // 1-2. DTO와 찾은 게시글 엔티티를 함께 넘겨 댓글 엔티티를 생성합니다. (연관 관계 매핑)
+            System.out.println("게시글 찾음: " + boardEntity.getId());
             CommentEntity commentEntity = CommentEntity.toSaveEntity(commentDTO, boardEntity);
-            // 1-3. 저장 후 생성된 댓글의 ID를 반환합니다.
-            return commentRepository.save(commentEntity).getId();
+
+            CommentEntity savedEntity = commentRepository.save(commentEntity);
+            System.out.println("저장 완료! 생성된 ID: " + savedEntity.getId());
+            return savedEntity.getId();
         }
+        System.out.println("게시글을 찾지 못함!");
         return null;
     }
 
@@ -111,5 +127,5 @@ public class CommentService {
 
         // 4-3. 더티 체킹(Dirty Checking) 활용: 엔티티의 필드값만 바꾸면 트랜잭션 종료 시 자동 반영됩니다.
         commentEntity.setCommentContents(commentDTO.getCommentContents());
-    }}
+    }
 }

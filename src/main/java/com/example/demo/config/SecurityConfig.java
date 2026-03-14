@@ -20,7 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-
+import static org.springframework.security.config.Customizer.withDefaults;
 import java.io.IOException;
 
 
@@ -59,22 +59,24 @@ public class SecurityConfig {
     }
 
     // SecurityConfig 클래스 내부에 추가
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        // 시큐리티가 아예 검사조차 안 하고 통과시키는 경로들
-        return (web) -> web.ignoring().requestMatchers("/board/**", "/css/**", "/js/**", "/images/**", "/comment/**");
-    }
+//    @Bean
+//    public WebSecurityCustomizer webSecurityCustomizer() {
+//        // 시큐리티가 아예 검사조차 안 하고 통과시키는 경로들
+//        return (web) -> web.ignoring().requestMatchers("/board/**", "/css/**", "/js/**", "/images/**", "/comment/**");
+//    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // 이 부분이 확실히 있어야 합니다.
+                // Customizer에서 제공하는 withDefaults()를 사용합니다.
+                .csrf(withDefaults())
                 // H2 콘솔 사용 시 프레임 허용
                 .headers(headers -> headers.frameOptions(options -> options.disable()))
                 .authorizeHttpRequests(authorize -> authorize
                         // 명시적으로 /board/delete, /board/update를 허용 목록에 추가
                         .requestMatchers("/board/**", "/board/paging", "/board/{id}", "/css/**", "/js/**","member/save", "/member/set-nickname","/member/mail-auth",
-                                "/member/id-check", "/member/login", "/member/nickname-check").permitAll()
+                                "/member/id-check", "/member/login", "/member/nickname-check", "/images/**", "/comment/**", "/board/delete-check/**"
+                                , "/board/delete").permitAll()
                         .requestMatchers( "/member/update", "/member/delete", "/member/my-page").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -85,6 +87,10 @@ public class SecurityConfig {
                         .loginProcessingUrl("/member/login")
                         .usernameParameter("memberId")
                         .passwordParameter("memberPassword")
+                                // 2. 성공 시 어디로 갈지 명시 (302의 목적지)
+                                .defaultSuccessUrl("/", true)
+                                // 3. 실패 시 어디로 갈지 명시
+                                .failureUrl("/member/login?error=true")
 //
 
                                 // SuccessHandler 부분 수정

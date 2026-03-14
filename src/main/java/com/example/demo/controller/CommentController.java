@@ -37,23 +37,41 @@ public class CommentController {
         String loginEmail = (String) session.getAttribute("loginEmail");
         String loginNickname = (String) session.getAttribute("loginNickname");
 
-        // 1-3. 로그인 상태라면 세션의 검증된 닉네임과 이메일을 강제로 주입 (보안 강화)
-        if (loginEmail != null) {
+        // 1-3.[추가] 비회원일 때만 작성자 규칙 수동 검사
+        if (loginEmail == null) {
+            if (!commentDTO.getCommentWriter().matches("^[a-zA-Z0-9가-힣]{2,10}$")) {
+                return new ResponseEntity<>("작성자는 2~10자의 영문, 한글, 숫자만 가능합니다.", HttpStatus.BAD_REQUEST);
+            }
+            if (commentDTO.getCommentPass() == null || commentDTO.getCommentPass().length() < 4) {
+                return new ResponseEntity<>("비밀번호는 4자 이상이어야 합니다.", HttpStatus.BAD_REQUEST);
+            }
+        } else {
+            // 1-4. 로그인 상태라면 세션의 검증된 닉네임과 이메일을 강제로 주입 (보안 강화)
             commentDTO.setMemberEmail(loginEmail);
             commentDTO.setCommentWriter(loginNickname);
         }
 
+//        try {
+//            Long saveResult = commentService.save(commentDTO);
+//            if (saveResult != null) {
+//                // 저장 성공 시 해당 게시글의 전체 댓글 목록을 다시 가져와서 반환
+//                List<CommentDTO> commentDTOList = commentService.findAll(commentDTO.getBoardId());
+//                return new ResponseEntity<>(commentDTOList, HttpStatus.OK);
+//            } else {
         try {
             Long saveResult = commentService.save(commentDTO);
+            System.out.println("저장된 댓글 번호: " + saveResult); // 여기에 번호가 찍히는지 확인!
+
             if (saveResult != null) {
-                // 저장 성공 시 해당 게시글의 전체 댓글 목록을 다시 가져와서 반환
                 List<CommentDTO> commentDTOList = commentService.findAll(commentDTO.getBoardId());
+                System.out.println("가져온 댓글 개수: " + commentDTOList.size()); // 0개라면 조회 로직 문제!
                 return new ResponseEntity<>(commentDTOList, HttpStatus.OK);
             } else {
                 return new ResponseEntity<>("해당 게시글이 존재하지 않습니다.", HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
-            return new ResponseEntity<>("서버 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+            e.printStackTrace(); // ★ 이 줄을 추가해서 콘솔에 에러 원인을 찍으세요!
+            return new ResponseEntity<>("서버 오류: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

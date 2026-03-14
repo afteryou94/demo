@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <meta charset="UTF-8">
     <title th:text="${board.boardTitle} + ' - 상세보기'"></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <style>
         .comment-section { background-color: #f8f9fa; border-radius: 10px; padding: 20px; }
         .comment-card { border: none; border-bottom: 1px solid #dee2e6; border-radius: 0; }
@@ -18,7 +21,10 @@
         <a class="navbar-brand fw-bold" href="/board/">My Board</a>
         <div class="text-end">
             <div th:if="${session.loginEmail == null}">
+                <a href="/oauth2/authorization/google" class="btn btn-sm btn-outline-danger">구글 로그인</a>
+                <a href="/oauth2/authorization/naver" class="btn btn-sm btn-outline-success">네이버 로그인</a>
                 <a href="/member/login" class="btn btn-sm btn-outline-primary">로그인</a>
+                <a href="/member/save" class="btn btn-sm btn-outline-secondary">회원가입</a>
             </div>
             <div th:if="${session.loginEmail != null}">
                 <span class="me-2 fw-bold" th:text="${session.loginNickname} + '님'"></span>
@@ -79,7 +85,7 @@
             <div th:each="comment: ${commentList}" class="card comment-card bg-transparent">
                 <div class="card-body px-0">
                     <div class="d-flex justify-content-between mb-2">
-                        <h6 class="fw-bold mb-0" th:text="${comment.commentWriter}">작성자</h6>
+                        <h6 class="fw-bold mb-0" th:id="'writer-' + ${comment.id}" th:text="${comment.commentWriter}">작성자</h6>
                         <small class="text-muted" th:text="${comment.commentCreatedAt}">2026-02-18</small>
                     </div>
                     <p class="mb-2" th:id="'contents-' + ${comment.id}" th:text="${comment.commentContents}">댓글 내용</p>
@@ -97,13 +103,155 @@
     const listReq = () => { location.href = "/board/"; }
 
     const deleteConfirm = () => {
-        if (confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
-            location.href = "/board/delete/" + [[${board.id}]];
-        }
+    const loginEmail = [[${session.loginEmail}]]; // 현재 로그인한 이메일
+    const boardEmail = [[${board.memberEmail}]]; // 게시글 작성자 이메일
+
+    if (!confirm("정말로 이 게시글을 삭제하시겠습니까?")) return;
+
+    // 1. 로그인 유저이고 본인 글인 경우 -> 바로 POST 삭제 요청
+    if (loginEmail !== null && loginEmail === boardEmail) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/board/delete'; // 컨트롤러의 @PostMapping("/delete")와 일치
+
+        const idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = 'id';
+        idInput.value = [[${board.id}]];
+
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_csrf';
+        csrfInput.value = [[${_csrf.token}]];
+
+        form.appendChild(idInput);
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
     }
+    // 2. 비로그인 유저이거나 타인의 글인 경우 -> 비밀번호 입력 페이지로 이동(GET)
+    else {
+        location.href = '/board/delete-check/' + [[${board.id}]];
+    }
+}
 
     // 댓글 작성/수정/삭제 관련 JS 코드는 기존 코드를 유지하시되,
     // 성공 시 alert 후 location.reload()를 사용하여 UI가 갱신되게 하시면 됩니다.
+
+    const commentWrite = () => {
+    const token = document.querySelector('meta[name="_csrf"]').content;
+    const header = document.querySelector('meta[name="_csrf_header"]').content;
+
+<!--    // 1. 입력 필드 존재 여부 확인 (비로그인 시 보임)-->
+<!--    const writerInput = document.getElementById("commentWriter");-->
+<!--    const passInput = document.getElementById("commentPass");-->
+<!--    const contentsInput = document.getElementById("commentContents");-->
+
+<!--    // 2. 값 추출-->
+<!--    const writer = writerInput ? writerInput.value : "";-->
+<!--    const pass = passInput ? passInput.value : "";-->
+<!--    const contents = contentsInput.value;-->
+<!--    const boardId = [[${board.id}]];-->
+
+    const contents = document.getElementById("commentContents").value;
+    // 작성자 칸이 없으면(회원) 'tempUser'라는 글자를 대신 보냄
+    const writer = document.getElementById("commentWriter")?.value || "tempUser";
+    // 비밀번호 칸이 없으면(회원) '1234'를 대신 보냄 (최소 4자 규칙 통과용)
+    const pass = document.getElementById("commentPass")?.value || "1234";
+
+    $.ajax({
+        type: "post",
+        url: "/comment/save",
+        data: {
+            "commentWriter": writer,   // DTO 필드명과 일치해야 함
+            "commentPass": pass,       // DTO 필드명과 일치해야 함
+            "commentContents": contents,
+            "boardId": [[${board.id}]]
+        },
+        beforeSend: function(xhr) {
+            xhr.setRequestHeader(header, token);
+        },
+        success: function(res) {
+            alert("댓글이 등록되었습니다.");
+            location.reload();
+        },
+        error: function(err) {
+            // ★ 에러 메시지를 alert으로 띄워야 왜 실패했는지 알 수 있습니다.
+            alert("등록 실패: " + err.responseText);
+            console.log("에러 내용: ", err);
+        }
+    });
+}
+
+    // 1. 댓글 삭제 함수
+const commentDelete = (id) => {
+    const loginEmail = [[${session.loginEmail}]]; // 세션에서 로그인 이메일 확인
+    let commentPass = "";
+
+    // 회원인지 비회원인지에 따라 알림창 분기
+    if (loginEmail != null) {
+        if (!confirm("정말로 이 댓글을 삭제하시겠습니까?")) return;
+    } else {
+        commentPass = prompt("댓글 비밀번호를 입력해주세요.");
+        if (commentPass == null) return; // 취소 버튼 클릭 시 종료
+    }
+
+    const token = document.querySelector('meta[name="_csrf"]').content;
+    const header = document.querySelector('meta[name="_csrf_header"]').content;
+
+    $.ajax({
+        type: "post",
+        url: "/comment/delete",
+        data: {
+            "id": id,
+            "commentPass": commentPass
+        },
+        beforeSend: function(xhr) {
+            xhr.setRequestHeader(header, token);
+        },
+        success: function(res) {
+            alert("삭제되었습니다.");
+            location.reload();
+        },
+        error: function(err) {
+            alert(err.responseText); // "본인의 댓글만 삭제할 수 있습니다" 등 에러 메시지 출력
+        }
+    });
+};
+
+// 2. 댓글 수정 함수
+const showUpdateForm = (id) => {
+    const loginEmail = [[${session.loginEmail}]];
+    const currentContents = document.getElementById('contents-' + id).innerText;
+    // 기존 작성자 이름을 가져옵니다 (id가 commentWriter-123 형태인 요소가 있다고 가정)
+    const currentWriter = document.getElementById('writer-' + id).innerText;
+
+    const newContents = prompt("수정할 내용을 입력하세요.", currentContents);
+    if (!newContents) return;
+
+    let commentPass = "1234"; // 회원용 기본값
+    if (loginEmail == null) {
+        commentPass = prompt("댓글 비밀번호를 입력해주세요.");
+        if (commentPass == null) return;
+    }
+
+    const token = document.querySelector('meta[name="_csrf"]').content;
+    const header = document.querySelector('meta[name="_csrf_header"]').content;
+
+    $.ajax({
+        type: "post",
+        url: "/comment/update",
+        data: {
+            "id": id,
+            "commentWriter": currentWriter, // 작성자 이름을 채워줘야 @NotBlank 통과!
+            "commentContents": newContents,
+            "commentPass": commentPass
+        },
+        beforeSend: function(xhr) { xhr.setRequestHeader(header, token); },
+        success: function(res) { alert("수정되었습니다."); location.reload(); },
+        error: function(err) { alert(err.responseText); }
+    });
+};
 </script>
 </body>
 </html>

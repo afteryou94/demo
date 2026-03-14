@@ -156,4 +156,20 @@ public class MemberService implements org.springframework.security.core.userdeta
             return "no"; // 중복됨
         }
     }
+
+//    //이메일 중복 검사
+//    public String emailCheck(String memberEmail) {
+//        // repository에 findByMemberEmail이 있다면 활용, 없다면 existsByMemberEmail 추가
+//        Optional<MemberEntity> byMemberEmail = memberRepository.findByMemberEmail(memberEmail);
+//        if (byMemberEmail.isPresent()) {
+//            return "no"; // 이미 존재함
+//        } else {
+//            return "ok"; // 가입 가능
+//        }
+//    }
+
+    public boolean existsByEmail(String email) {
+        // repository에서 해당 이메일로 가입된 정보가 있는지 확인 (true/false 반환)
+        return memberRepository.existsByMemberEmail(email);
+    }
 }

@@ -26,22 +26,36 @@ public class MemberController {
 
     // 1. 회원가입 페이지 출력
     @GetMapping("/save")
-    public String saveForm() {
-        return "join"; // join.html을 보여줌
+    public String saveForm(Model model) {
+        // 빈 DTO를 담아서 보내야 join.html의 th:object가 인식합니다.
+        model.addAttribute("memberDTO", new MemberDTO());
+        return "join";
     }
 
     // 2. 회원가입 실행
     @PostMapping("/save")
-    public String save(@ModelAttribute MemberDTO memberDTO) {
-        // 사용자가 입력한 정보를 담은 DTO를 서비스로 넘겨서 DB에 저장
+    public String save(@Valid @ModelAttribute MemberDTO memberDTO, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            // 검증 에러 발생 시 로그를 찍어보면 어떤 규칙이 위반됐는지 알 수 있습니다.
+            System.out.println("검증 에러 발생: " + bindingResult.getAllErrors());
+            return "join"; // 다시 가입 페이지로 이동
+        }
         memberService.save(memberDTO);
-        return "login"; // 가입 완료 후 로그인 페이지로 이동
+        return "login";
     }
 
     // 3. 로그인 페이지 출력
     @GetMapping("/login")
-    public String loginForm() {
-        return "login"; // login.html을 보여줌
+    public String loginForm(@RequestParam(value = "error", required = false) String error,
+                            @RequestParam(value = "exception", required = false) String exception,
+                            Model model) {
+
+        if (error != null) {
+            // 보안을 위해 상세한 이유보다는 포괄적인 메시지를 권장합니다.
+            model.addAttribute("loginErrorMsg", "아이디 또는 비밀번호가 일치하지 않습니다.");
+        }
+
+        return "login"; // login.html 반환
     }
 
     // 4. 로그인 실행 - Spring Security가 대체
@@ -154,9 +168,28 @@ public class MemberController {
     }
 
     // 11.이메일 인증번호 발송
+//    @PostMapping("/mail-auth")
+//    public @ResponseBody int mailAuth(@RequestParam("memberEmail") String memberEmail) {
+//        int code = mailService.sendMail(memberEmail);
+//        return code; // 생성된 6자리 번호를 프론트로 전달 (보안상 실제 서비스에선 세션/Redis 권장)
+//    }
     @PostMapping("/mail-auth")
-    public @ResponseBody int mailAuth(@RequestParam("memberEmail") String memberEmail) {
-        int code = mailService.sendMail(memberEmail);
-        return code; // 생성된 6자리 번호를 프론트로 전달 (보안상 실제 서비스에선 세션/Redis 권장)
+    public @ResponseBody String mailAuth(@RequestParam("memberEmail") String memberEmail) {
+        // 1. 중복 체크 먼저 수행
+        if (memberService.existsByEmail(memberEmail)) {
+            return "duplicate"; // 중복된 경우 특정한 문자열 반환
+        }
+
+        // 2. 중복이 아닐 때만 인증번호 발송 로직 실행
+        // 2. int를 String으로 변환하여 저장
+        int authCodeInt = mailService.sendMail(memberEmail); // 서비스가 int를 반환한다고 가정
+        String authCode = String.valueOf(authCodeInt);
+        return authCode;
     }
+
+//    // 12.이메일 중복검사
+//    @PostMapping("/email-check")
+//    public @ResponseBody String emailCheck(@RequestParam("memberEmail") String memberEmail) {
+//        return memberService.emailCheck(memberEmail);
+//    }
 }

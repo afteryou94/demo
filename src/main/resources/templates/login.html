@@ -21,11 +21,11 @@
         <div class="card-body p-5">
             <h2 class="text-center fw-bold mb-4">로그인</h2>
 
-            <div th:if="${loginErrorMsg}" class="alert alert-danger py-2 small text-center" role="alert">
-                <span th:text="${loginErrorMsg}"></span>
+            <div th:if="${param.error}" class="alert alert-danger py-2 small text-center" role="alert">
+                <span th:text="${loginErrorMsg} ?: '아이디 또는 비밀번호가 일치하지 않습니다.'"></span>
             </div>
 
-            <form action="/member/login" method="post">
+            <form th:action="@{/member/login}" method="post">
                 <div class="form-floating mb-3">
                     <input type="text" name="memberId" class="form-control" id="floatingInput" placeholder="ID">
                     <label for="floatingInput">아이디</label>

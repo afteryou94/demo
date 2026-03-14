@@ -19,7 +19,7 @@
             <h4 class="mb-0 fw-bold">새 글 작성</h4>
         </div>
         <div class="card-body p-4">
-            <form action="/board/save" th:object="${boardDTO}" method="post">
+            <form th:action="@{/board/save}" th:object="${boardDTO}" method="post">
 
                 <div th:if="${session.loginEmail != null}" class="alert alert-light border mb-4 d-flex align-items-center">
                     <span class="badge bg-success me-2">작성자</span>
@@ -55,11 +55,15 @@
                 <div class="mb-4">
                     <label th:for="boardTitle" class="form-label fw-bold">제목</label>
                     <input type="text" th:field="*{boardTitle}" class="form-control form-control-lg" placeholder="제목을 입력해 주세요">
+                    <p th:if="${#fields.hasErrors('boardTitle')}"
+                       th:errors="*{boardTitle}" style="color: red;"></p>
                 </div>
 
                 <div class="mb-4">
                     <label th:for="boardContents" class="form-label fw-bold">내용</label>
                     <textarea th:field="*{boardContents}" class="form-control" rows="12" placeholder="내용을 작성해 주세요"></textarea>
+                    <p th:if="${#fields.hasErrors('boardContents')}"
+                       th:errors="*{boardContents}" style="color: red;"></p>
                 </div>
 
                 <div class="d-flex justify-content-end gap-2">

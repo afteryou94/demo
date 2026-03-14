@@ -1,6 +1,7 @@
 package com.example.demo.dto;
 
 import com.example.demo.entity.BoardEntity;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -18,7 +19,10 @@ public class BoardDTO { // (데이터 저장 공간)
     private Long id;
     private String memberEmail; // 추가
     private String updatePass;
+    @NotBlank(message = "제목을 입력해주십시오.") // null, "", " " 모두 허용 안 함
     private String boardTitle;
+    @Column(columnDefinition = "TEXT") // DB의 TEXT 타입과 매핑
+    @NotBlank(message = "내용을 입력해주십시오.") // null, "", " " 모두 허용 안 함
     private String boardContents;
     private int boardHits;
     private String boardCreatedAt;

@@ -1,30 +1,64 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
     <meta charset="UTF-8">
-    <title>update</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>게시글 수정</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-<div th:if="${errorMessage}" style="color: red;" th:text="${errorMessage}"></div>
+<body class="bg-light">
 
-<form action="/board/update" method="post">
-    <input type="hidden" name="id" th:value="${boardUpdate.id}">
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">게시글 수정</h3>
+                </div>
+                <div class="card-body">
+                    <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
 
-    <div th:if="${session.loginEmail == null}">
-        <input type="password" name="boardPass" placeholder="기존 비밀번호 입력" required>
+                    <form th:action="@{/board/update}" method="post">
+                        <input type="hidden" name="id" th:value="${boardUpdate.id}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">비밀번호 확인</label>
+                            <div th:if="${session.loginEmail == null}">
+                                <input type="password" name="boardPass" class="form-control" placeholder="기존 비밀번호를 입력해야 수정이 가능합니다." required>
+                                <div class="form-text">비로그인 작성글은 비밀번호 일치가 필요합니다.</div>
+                            </div>
+                            <div th:if="${session.loginEmail != null}">
+                                <input type="text" class="form-control bg-body-secondary" th:value="'로그인 계정: ' + ${session.loginEmail}" readonly>
+                                <input type="hidden" name="boardPass" th:value="${boardUpdate.boardPass}">
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label for="boardTitle" class="form-label fw-bold">제목</label>
+                            <input type="text" id="boardTitle" name="boardTitle" class="form-control"
+                                   th:value="${boardUpdate.boardTitle}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="boardContents" class="form-label fw-bold">내용</label>
+                            <textarea id="boardContents" name="boardContents" class="form-control"
+                                      rows="10" th:text="${boardUpdate.boardContents}" required></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a th:href="@{|/board/${boardUpdate.id}|}" class="btn btn-secondary me-md-2">취소</a>
+                            <button type="submit" class="btn btn-primary">수정완료</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-    <div th:if="${session.loginEmail != null}">
-        <input type="hidden" name="boardPass" th:value="${boardUpdate.boardPass}">
-    </div>
+</div>
 
-    <input type="text" name="boardTitle" th:value="${boardUpdate.boardTitle}">
-    <textarea name="boardContents" th:text="${boardUpdate.boardContents}"></textarea>
-    <button type="submit">수정완료</button>
-</form>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script th:if="${errorMessage}">
     alert('[[${errorMessage}]]');
 </script>

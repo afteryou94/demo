@@ -19,7 +19,7 @@
         <div class="card-body p-5">
             <h2 class="text-center fw-bold mb-4">회원정보 수정</h2>
 
-            <form action="/member/update" method="post" th:object="${updateMember}">
+            <form th:action="@{/member/update}" method="post" th:object="${updateMember}">
                 <input type="hidden" th:field="*{id}">
 
                 <div class="mb-3">
