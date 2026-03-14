@@ -2,7 +2,7 @@ package com.example.demo.dto;
 import com.example.demo.entity.MemberEntity;
 import lombok.Builder;
 import lombok.Getter;
-import com.example.demo.domain.Role;   // Role이 domain 패키지에 있다면
+import com.example.demo.domain.Role;   
 
 import java.util.Map;
 
@@ -14,7 +14,7 @@ public class OAuthAttributes {
     private String name;
     private String email;
 
-    // 구글인지 네이버인지 구분하여 attributes를 추출함
+    
     public static OAuthAttributes of(String registrationId, String userNameAttributeName, Map<String, Object> attributes) {
         if ("naver".equals(registrationId)) {
             return ofNaver("id", attributes);
@@ -41,13 +41,13 @@ public class OAuthAttributes {
                 .build();
     }
 
-    // 처음 가입할 때 Entity를 생성함
+    
     public MemberEntity toEntity() {
         return MemberEntity.builder()
-                .memberId(email) // 소셜 사용자는 이메일을 아이디로 사용
+                .memberId(email) 
                 .memberName(name)
                 .memberEmail(email)
-                .memberNickname(name) // 닉네임도 이름으로 일단 저장
+                .memberNickname(name) 
                 .role(Role.USER)
                 .build();
     }
