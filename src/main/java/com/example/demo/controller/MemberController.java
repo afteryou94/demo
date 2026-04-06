@@ -143,16 +143,44 @@ public class MemberController {
 
 
     @PostMapping("/mail-auth")
-    public @ResponseBody String mailAuth(@RequestParam("memberEmail") String memberEmail) {
+    public @ResponseBody String mailAuth(@RequestParam("memberEmail") String memberEmail, HttpSession session) {
 
         if (memberService.existsByEmail(memberEmail)) {
             return "duplicate";
         }
 
 
-        int authCodeInt = mailService.sendMail(memberEmail);
-        String authCode = String.valueOf(authCodeInt);
-        return authCode;
+        int authCode = mailService.sendMail(memberEmail);
+        // [변경] 브라우저에 번호를 주는 대신, 서버 세션에 저장
+        session.setAttribute("serverAuthCode", String.valueOf(authCode));
+        // [중요] 현재 시간을 밀리초(ms) 단위로 저장
+        session.setAttribute("authCodeTime", System.currentTimeMillis());
+
+        return "ok"; // 번호 대신 성공 메시지만 리턴
+    }
+
+    @PostMapping("/verify-code")
+    public @ResponseBody String verifyCode(@RequestParam("userCode") String userCode, HttpSession session) {
+        String serverCode = (String) session.getAttribute("serverAuthCode");
+        Long createTime = (Long) session.getAttribute("authCodeTime");
+
+        if (serverCode == null || createTime == null) {
+            return "expired"; // 세션이 이미 만료됨
+        }
+
+        // 현재 시간과 생성 시간의 차이 계산 (1000ms * 60s * 3m = 180,000ms)
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - createTime > 3 * 60 * 1000) {
+            session.removeAttribute("serverAuthCode");
+            session.removeAttribute("authCodeTime");
+            return "timeout"; // 3분 지남
+        }
+
+        if (userCode.equals(serverCode)) {
+            session.removeAttribute("serverAuthCode");
+            return "success";
+        }
+        return "fail";
     }
 
 

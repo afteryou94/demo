@@ -89,9 +89,19 @@
                         <small class="text-muted" th:text="${comment.commentCreatedAt}">2026-02-18</small>
                     </div>
                     <p class="mb-2" th:id="'contents-' + ${comment.id}" th:text="${comment.commentContents}">댓글 내용</p>
+
                     <div class="d-flex gap-2 justify-content-end">
-                        <button class="btn btn-link btn-sm text-decoration-none p-0 text-warning" th:onclick="showUpdateForm([[${comment.id}]])">수정</button>
-                        <button class="btn btn-link btn-sm text-decoration-none p-0 text-danger" th:onclick="commentDelete([[${comment.id}]])">삭제</button>
+
+                        <th:block th:if="${session.loginEmail == null and comment.memberEmail == null}">
+                            <button class="btn btn-link btn-sm text-decoration-none p-0 text-warning" th:onclick="showUpdateForm([[${comment.id}]])">수정</button>
+                            <button class="btn btn-link btn-sm text-decoration-none p-0 text-danger" th:onclick="commentDelete([[${comment.id}]])">삭제</button>
+                        </th:block>
+
+                        <th:block th:if="${session.loginEmail != null and session.loginEmail == comment.memberEmail}">
+                            <button class="btn btn-link btn-sm text-decoration-none p-0 text-warning" th:onclick="showUpdateForm([[${comment.id}]])">수정</button>
+                            <button class="btn btn-link btn-sm text-decoration-none p-0 text-danger" th:onclick="commentDelete([[${comment.id}]])">삭제</button>
+                        </th:block>
+
                     </div>
                 </div>
             </div>
@@ -141,17 +151,6 @@
     const commentWrite = () => {
     const token = document.querySelector('meta[name="_csrf"]').content;
     const header = document.querySelector('meta[name="_csrf_header"]').content;
-
-<!--    // 1. 입력 필드 존재 여부 확인 (비로그인 시 보임)-->
-<!--    const writerInput = document.getElementById("commentWriter");-->
-<!--    const passInput = document.getElementById("commentPass");-->
-<!--    const contentsInput = document.getElementById("commentContents");-->
-
-<!--    // 2. 값 추출-->
-<!--    const writer = writerInput ? writerInput.value : "";-->
-<!--    const pass = passInput ? passInput.value : "";-->
-<!--    const contents = contentsInput.value;-->
-<!--    const boardId = [[${board.id}]];-->
 
     const contents = document.getElementById("commentContents").value;
     // 작성자 칸이 없으면(회원) 'tempUser'라는 글자를 대신 보냄

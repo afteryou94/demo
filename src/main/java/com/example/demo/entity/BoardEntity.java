@@ -40,15 +40,12 @@ public class BoardEntity extends BaseTimeEntity {
     @Column
     private int boardHits;
 
-
     @OneToMany(mappedBy = "boardEntity", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CommentEntity> commentEntityList = new ArrayList<>();
-
 
     public static BoardEntity toSaveEntity(BoardDTO boardDTO) {
         BoardEntity boardEntity = new BoardEntity();
         boardEntity.boardWriter = boardDTO.getBoardWriter();
-
         boardEntity.memberEmail = boardDTO.getMemberEmail();
         boardEntity.boardPass = boardDTO.getBoardPass();
         boardEntity.boardTitle = boardDTO.getBoardTitle();
@@ -56,7 +53,6 @@ public class BoardEntity extends BaseTimeEntity {
         boardEntity.boardHits = 0;
         return boardEntity;
     }
-
 
     public void update(BoardDTO boardDTO) {
         this.boardTitle = boardDTO.getBoardTitle();

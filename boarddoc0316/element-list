@@ -1,0 +1,8 @@
+com.example.demo
+com.example.demo.config
+com.example.demo.controller
+com.example.demo.domain
+com.example.demo.dto
+com.example.demo.entity
+com.example.demo.repository
+com.example.demo.service

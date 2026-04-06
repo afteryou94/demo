@@ -59,13 +59,14 @@
           <div th:if="${#fields.hasErrors('memberEmail')}" th:errors="*{memberEmail}" class="text-danger small mt-1"></div>
         </div>
 
-        <div class="mb-4">
-          <label for="authCode" class="form-label fw-bold">인증번호 입력</label>
-          <div class="input-group">
-            <input type="text" id="authCode" class="form-control" placeholder="인증번호 6자리">
-            <button class="btn btn-outline-primary" type="button" onclick="checkAuthCode()">확인</button>
-          </div>
-          <div id="mail-check-result" class="valid-msg mt-1"></div>
+        <div class="input-group mb-3">
+          <input type="text" id="authCode" class="form-control" placeholder="인증번호 6자리 입력">
+          <span id="timer" class="input-group-text text-danger">03:00</span>
+          <button class="btn btn-outline-secondary" type="button" onclick="checkAuthCode()">인증확인</button>
+        </div>
+        <div id="reSendArea" style="display: none;">
+          <p class="text-muted small">시간이 만료되었나요?</p>
+          <button type="button" class="btn btn-sm btn-warning" onclick="sendEmail()">인증번호 재발송</button>
         </div>
 
         <div class="d-grid shadow-sm">
@@ -87,6 +88,7 @@
   let isEmailAuthChecked = false;  // 이메일 인증 완료 여부
   let isNicknameChecked = false;   // 닉네임 체크 완료 여부
   let serverAuthCode = "";         // 서버 인증번호 저장
+  let timerInterval; // 타이머를 멈추기 위한 변수
 
   /**
    * [함수: 가입 버튼 상태 업데이트]
@@ -228,32 +230,75 @@
                 $("#memberEmail").val("").focus();
             } else {
                 alert("인증번호가 발송되었습니다.");
-                serverAuthCode = res.toString(); // 인증번호 저장
+                // [인증 시간] 메일 발송 성공 시 타이머를 시작합니다.
+                startTimer();
             }
         },
         error: function(err) { alert("메일 발송 중 오류가 발생했습니다."); }
     });
   }
 
+const startTimer = () => {
+    let timeLeft = 180; // 3분 = 180초
+    const timerDisplay = document.getElementById("timer");
+    const reSendArea = document.getElementById("reSendArea");
+
+    // 기존에 돌아가던 타이머가 있다면 초기화 (재발송 시 대비)
+    if (timerInterval) clearInterval(timerInterval);
+    reSendArea.style.display = "none";
+
+    timerInterval = setInterval(() => {
+        let minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
+
+        // 초가 10보다 작으면 앞에 0을 붙여줌 (예: 02:09)
+        seconds = seconds < 10 ? '0' + seconds : seconds;
+        timerDisplay.innerText = `0${minutes}:${seconds}`;
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            timerDisplay.innerText = "시간 만료";
+            reSendArea.style.display = "block"; // 재발송 버튼 영역 노출
+            isEmailAuthChecked = false; // 인증 상태 초기화
+            updateSubmitButton(); // 가입 버튼 상태 업데이트
+        }
+        timeLeft--;
+    }, 1000);
+};
+
+
   /**
    * [함수: 5. 인증번호 확인]
    */
   const checkAuthCode = () => {
     const userCode = document.getElementById("authCode").value;
-    const resultMsg = document.getElementById("mail-check-result");
 
-    if (userCode === serverAuthCode && serverAuthCode !== "") {
-        resultMsg.className = "valid-msg mt-1 text-success";
-        resultMsg.innerText = "인증되었습니다.";
-        isEmailAuthChecked = true;
-        document.getElementById("authCode").readOnly = true;
-    } else {
-        resultMsg.className = "valid-msg mt-1 text-danger";
-        resultMsg.innerText = "인증번호가 일치하지 않습니다.";
-        isEmailAuthChecked = false;
-    }
-    updateSubmitButton();
-  };
+    $.ajax({
+        type: "post",
+        url: "/member/verify-code",
+        data: { "userCode": userCode },
+        success: function(res) {
+            if (res === "success") {
+                clearInterval(timerInterval); // 타이머 정지
+                document.getElementById("timer").innerText = "인증완료";
+                document.getElementById("timer").classList.replace("text-danger", "text-success");
+                document.getElementById("authCode").readOnly = true; // 입력창 잠금
+
+                // [추가] 인증 성공 상태 반영
+                isEmailAuthChecked = true;
+                alert("인증에 성공하였습니다.");
+            } else if (res === "timeout" || res === "expired") {
+                alert("인증 시간이 만료되었습니다. 다시 시도해주세요.");
+                isEmailAuthChecked = false;
+            } else {
+                alert("인증번호가 일치하지 않습니다.");
+                isEmailAuthChecked = false;
+            }
+            // 가입 버튼 상태 실시간 업데이트
+            updateSubmitButton();
+        }
+    });
+};
 </script>
 </script>
 </body>

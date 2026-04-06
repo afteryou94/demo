@@ -79,13 +79,20 @@ public class CommentService {
                 .orElseThrow(() -> new RuntimeException("댓글이 존재하지 않습니다."));
 
 
+        // [경우 1] 댓글이 '로그인 계정'의 소유일 때
         if (commentEntity.getMemberEmail() != null) {
-
-            if (!commentEntity.getMemberEmail().equals(loginEmail)) {
+            // 비로그인 상태이거나, 로그인했더라도 이메일이 다르면 무조건 차단
+            if (loginEmail == null || !commentEntity.getMemberEmail().equals(loginEmail)) {
                 throw new RuntimeException("본인의 댓글만 삭제할 수 있습니다.");
             }
-        } else {
-
+        }
+        // [경우 2] 댓글이 '비로그인(익명)' 소유인데, 현재 사용자는 '로그인' 상태일 때
+        else if (loginEmail != null) {
+            // 로그인한 유저는 남(익명)의 댓글을 삭제할 수 없음
+            throw new RuntimeException("본인의 댓글만 삭제할 수 있습니다.");
+        }
+        // [경우 3] 댓글도 '익명'이고, 현재 사용자도 '비로그인' 상태일 때 (정상적인 비밀번호 검증)
+        else {
             if (!commentEntity.getCommentPass().equals(commentPass)) {
                 throw new RuntimeException("비밀번호가 일치하지 않습니다.");
             }
@@ -99,22 +106,29 @@ public class CommentService {
      */
     @Transactional
     public void update(CommentDTO commentDTO, String loginEmail) {
-
         CommentEntity commentEntity = commentRepository.findById(commentDTO.getId())
                 .orElseThrow(() -> new RuntimeException("댓글이 존재하지 않습니다."));
 
-
+        // [경우 1] 댓글이 '로그인 계정'의 소유일 때
         if (commentEntity.getMemberEmail() != null) {
-            if (!commentEntity.getMemberEmail().equals(loginEmail)) {
+            // 비로그인 상태이거나, 로그인했더라도 이메일이 다르면 무조건 차단
+            if (loginEmail == null || !commentEntity.getMemberEmail().equals(loginEmail)) {
                 throw new RuntimeException("본인의 댓글만 수정할 수 있습니다.");
             }
-        } else {
+        }
+        // [경우 2] 댓글이 '비로그인(익명)' 소유인데, 현재 사용자는 '로그인' 상태일 때
+        else if (loginEmail != null) {
+            // 로그인한 유저는 남(익명)의 댓글을 수정할 수 없음
+            throw new RuntimeException("본인의 댓글만 수정할 수 있습니다.");
+        }
+        // [경우 3] 댓글도 '익명'이고, 현재 사용자도 '비로그인' 상태일 때 (정상적인 비밀번호 검증)
+        else {
             if (!commentEntity.getCommentPass().equals(commentDTO.getCommentPass())) {
                 throw new RuntimeException("비밀번호가 일치하지 않습니다.");
             }
         }
 
-
+        // 모든 검증 통과 시 업데이트
         commentEntity.setCommentContents(commentDTO.getCommentContents());
     }
 }

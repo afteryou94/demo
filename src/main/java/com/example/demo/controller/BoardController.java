@@ -124,9 +124,9 @@ public class BoardController {
         } catch (RuntimeException e) {
 
             model.addAttribute("id", id);
-            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("errorMessage", "비밀번호가 일치하지 않습니다.");
 
-            return "redirect:/board/" + id + "?error=auth";
+            return "delete-check";
         }
     }
 
@@ -156,7 +156,7 @@ public class BoardController {
 
 
     @PostMapping("/update")
-    public String update(@ModelAttribute BoardDTO boardDTO, HttpSession session, RedirectAttributes redirectAttributes) {
+    public String update(@ModelAttribute BoardDTO boardDTO, HttpSession session, RedirectAttributes redirectAttributes, Model model) {
         String loginEmail = (String) session.getAttribute("loginEmail");
 
         try {
@@ -166,8 +166,10 @@ public class BoardController {
             redirectAttributes.addAttribute("id", boardDTO.getId());
             return "redirect:/board/{id}";
         } catch (RuntimeException e) {
-
-            return "redirect:/board/?error=auth";
+            // 수정 실패 시 다시 update.html로 보내고 에러 메시지를 담는다.
+            model.addAttribute("boardUpdate", boardDTO); // ⬅️ 입력했던 데이터 유지
+            model.addAttribute("errorMessage", "비밀번호가 일치하지 않습니다.");
+            return "update"; // ⬅️ 다시 수정 폼으로 보냄!
         }
     }
 
