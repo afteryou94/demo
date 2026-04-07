@@ -8,7 +8,7 @@
 # 1. 프로젝트 개요
 - **개발 기간**: 2026.02 ~ 2026.03
 - **주요 목적**: CRUD 게시판을 바탕으로 Spring Security를 통한 인증 보안 강화 및 JPA 기반 동적 검색 기능 등 구현 연습
-## 1. 프로젝트 기능
+## 프로젝트 기능
 - **게시판** - 권한 별 CRUD 기능, 조회수, 페이징 및 검색 처리
 - **사용자** - Security를 통한 회원가입 및 로그인, OAuth 2.0 네이버, 구글 로그인, 회원 정보 수정, 유효성 검사 및 중복 검사, 이메일 인증번호 발송, 소셜 계정 첫 로그인 시 닉네임 설정
 - **댓글** - 권한 별 CRUD 기능
@@ -36,7 +36,9 @@
 - Thymeleaf
 - AJAX
 # 2. 실행 화면
-게시글 관련
+<details>
+<summary>🔍 게시글 관련 보기 (클릭)</summary>
+
 ## **1. 게시글 목록**
 
    <img width="1280" height="713" alt="image" src="https://github.com/user-attachments/assets/84f5f09c-1680-48cf-9894-4a983036f3c2" />
@@ -101,7 +103,11 @@
 <img width="1280" height="814" alt="image" src="https://github.com/user-attachments/assets/a66c3b2b-06eb-48ce-bb1c-c3a967c0d136" />
 <img width="1280" height="456" alt="image" src="https://github.com/user-attachments/assets/c1058213-a92c-4e67-bcdb-4dbe4f78e37b" />
 
-회원 관련
+</details>
+
+<details>
+<summary>🔍 회원 관련 보기 (클릭)</summary>
+   
 ## **1. 회원가입 화면**
 
 <img width="625" height="816" alt="2026-04-06 22_01_11-demo – save html  demo main" src="https://github.com/user-attachments/assets/acbd76d6-3d34-48f4-8a39-6e23e18f41bd" />
@@ -137,6 +143,220 @@ DB에 있는 이메일을 입력하면 중복으로 인해 불가능한 모습
 
 ## **3. 회원정보 수정**
 이메일(readonly), 이름(소셜 계정 전용), 닉네임과 비밀번호 변경 가능, 완료하면 게시판 목록으로 redirect
+
+<img width="623" height="903" alt="2026-04-07 19_27_16-demo – memberUpdate html  demo main" src="https://github.com/user-attachments/assets/b2960692-f8fb-42a6-beeb-34a1db2db781" />
+
+유효규칙을 지키지 않으면 수정 완료 버튼이 활성화되지않는다. 
+
+<img width="585" height="810" alt="2026-04-07 19_28_54-demo – memberUpdate html  demo main" src="https://github.com/user-attachments/assets/ad4b0dca-67f4-482d-b15e-3ce94b18ecfb" />
+
+비밀번호를 변경하지 않고 닉네임만 변경할 수 있다.
+
+</details>
+
+<details>
+<summary>🔍 댓글 관련 보기 (클릭)</summary>
+   
+## **1. 댓글 작성 화면**
+
+<img width="1460" height="894" alt="2026-04-07 19_30_44-demo – memberUpdate html  demo main" src="https://github.com/user-attachments/assets/fcfee7af-bd6b-4998-9eeb-ab8ed75eaef4" />
+
+비회원으로 댓글을 등록하는 모습, ID(2~10자), 최소4자리 비밀번호를 입력해야 등록이 가능하다.
+
+<img width="1539" height="981" alt="2026-04-07 19_31_12-demo – memberUpdate html  demo main" src="https://github.com/user-attachments/assets/159fbec7-ee65-4d62-98b2-23853c389076" />
+
+회원으로 등록하는 모습, 댓글 내용만 입력하면 된다. AJAX 비등기로 인하여 재로딩없이 등록
+
+## **2. 댓글 수정 화면**
+
+<img width="1280" height="1005" alt="image" src="https://github.com/user-attachments/assets/9b80be79-8997-4ce3-8d12-b0e695c79e86" />
+
+비회원은 등록할 때 사용한 비밀번호를 입력해야 수정이 가능하다.
+
+<img width="1280" height="962" alt="image" src="https://github.com/user-attachments/assets/3d9acd51-892f-4a32-ad5a-295a4115727b" />
+
+<img width="1280" height="877" alt="image" src="https://github.com/user-attachments/assets/404d8d75-a59f-4fb5-baf0-22370b836151" />
+
+본인이 등록한 댓글만 수정이 가능하다. AJAX 비등기로 인하여 재로딩없이 댓글 수정
+
+## **3. 댓글 삭제 화면**
+
+<img width="1280" height="1009" alt="image" src="https://github.com/user-attachments/assets/4058acbb-6daf-4a0b-a9b7-e56f791fbf5a" />
+
+<img width="1280" height="1032" alt="image" src="https://github.com/user-attachments/assets/ca9e7c23-c8bb-434a-991e-c5060182f6dd" />
+
+비회원 댓글, 삭제도 똑같이 비밀번호를 입력해야 삭제가 가능하다.
+
+<img width="1280" height="944" alt="image" src="https://github.com/user-attachments/assets/ca4dcaf8-e18e-4adf-8051-fbedd5bf1673" />
+
+<img width="1280" height="754" alt="image" src="https://github.com/user-attachments/assets/9eddcf37-e7be-45c9-9a37-4bd882deafd7" />
+
+회원 댓글, 본인이 직접 작성한 댓글을 삭제할 수 있다. AJAX 비등기로 인하여 재로딩없이 댓글 삭제
+
+</details>
+
+# **3. 구조 및 설계**
+## **1. 패키지 구조**
+<details>
+<summary> 패키지 구조 (클릭)</summary>
+
+### 📂 Project Structure
+
+```text
+src
+ ├─main
+ │  ├─generated
+ │  ├─java
+ │  │  └─com
+ │  │      └─example
+ │  │          └─demo
+ │  │              │  DemoApplication.java
+ │  │              │  
+ │  │              ├─config      <-- 설정 관련
+ │  │              │      CustomOAuth2User.java
+ │  │              │      LoginCheckInterceptor.java
+ │  │              │      PasswordConfig.java
+ │  │              │      SecurityConfig.java
+ │  │              │      
+ │  │              ├─controller  <-- 컨트롤러 계층
+ │  │              │      BoardController.java
+ │  │              │      CommentController.java
+ │  │              │      HomeController.java
+ │  │              │      MemberController.java
+ │  │              │      
+ │  │              ├─domain
+ │  │              │      Role.java
+ │  │              │      
+ │  │              ├─dto         <-- 데이터 전송 객체
+ │  │              │      BoardDTO.java
+ │  │              │      CommentDTO.java
+ │  │              │      MemberDTO.java
+ │  │              │      MemberUpdateDTO.java
+ │  │              │      OAuthAttributes.java
+ │  │              │      
+ │  │              ├─entity      <-- DB 엔티티
+ │  │              │      BaseTimeEntity.java
+ │  │              │      BoardEntity.java
+ │  │              │      CommentEntity.java
+ │  │              │      MemberEntity.java
+ │  │              │      
+ │  │              ├─repository  <-- DB 접근 객체
+ │  │              │      BoardRepository.java
+ │  │              │      CommentRepository.java
+ │  │              │      MemberRepository.java
+ │  │              │      
+ │  │              └─service     <-- 비즈니스 로직
+ │  │                      BoardService.java
+ │  │                      CommentService.java
+ │  │                      CustomOAuth2UserService.java
+ │  │                      MailService.java
+ │  │                      MemberService.java
+ │  │                      
+ │  └─resources
+ │      │  application-local.yml
+ │      │  application-oauth.yml
+ │      │  application.yml
+ │      │  
+ │      ├─static      <-- 정적 파일 (CSS, JS)
+ │      └─templates   <-- 뷰 파일 (HTML)
+ │              delete-check.html
+ │              detail.html
+ │              index.html
+ │              join.html
+ │              list.html
+ │              login.html
+ │              memberUpdate.html
+ │              paging.html
+ │              save.html
+ │              set-nickname.html
+ │              update.html
+```
+</details>
+
+## **2. DB 설계**
+
+<img width="894" height="694" alt="image" src="https://github.com/user-attachments/assets/b64e5058-1ccb-4deb-92b3-22a46515198f" />
+
+<img width="730" height="562" alt="image" src="https://github.com/user-attachments/assets/8e2162a8-d3cc-43b9-8a52-a6959aa4fecf" />
+
+<img width="649" height="505" alt="image" src="https://github.com/user-attachments/assets/ca3f8278-17ce-4ad0-806f-990b03eff53c" />
+
+<img width="704" height="483" alt="image" src="https://github.com/user-attachments/assets/55c7eba8-0f9b-415b-ae4f-824cfa57f041" />
+
+## **3. API 설계**
+
+<img width="991" height="623" alt="image" src="https://github.com/user-attachments/assets/a8c7c141-e663-4172-be8a-05c907bdd5a3" />
+
+<img width="913" height="641" alt="image" src="https://github.com/user-attachments/assets/08934e32-68ae-472c-833b-cd5c5ae17373" />
+
+<img width="669" height="275" alt="image" src="https://github.com/user-attachments/assets/f093d7e4-2d00-4577-9c52-afb27933506c" />
+
+## **4. 아키텍처 설계**
+
+<img width="656" height="731" alt="게시판 시스템 아키텍처 drawio" src="https://github.com/user-attachments/assets/08356972-f0fc-464d-90fd-6482b585c375" />
+
+# **개발 내용**
+
+<a href="https://dev-afteryou.tistory.com/2">
+  <img src="https://img.shields.io/badge/Tistory-Spring Boot JPA 기반 게시글 조회수 및 비즈니스 로직 구현-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/3">
+  <img src="https://img.shields.io/badge/Tistory-Spring Boot Data JPA Pageable을 활용한 대용량 데이터 페이징-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/4">
+  <img src="https://img.shields.io/badge/Tistory-Spring Data JPA Method Query를 활용한 조건별 동적 검색 및 페이징 구현-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/5">
+  <img src="https://img.shields.io/badge/Tistory-Spring Security와 OAuth 2.0 기반 통합 인증 시스템 구축(회원가입, 로그인)-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/6">
+  <img src="https://img.shields.io/badge/Tistory-게시판 인증 아키텍처 리팩토링 및 트러블슈팅을 통한 보안 강화-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/7">
+  <img src="https://img.shields.io/badge/Tistory-회원가입 시 JavaMailSender를 활용한 비대면 본인 인증 프로세스 구현-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/8">
+  <img src="https://img.shields.io/badge/Tistory-SMTP 보안 강화 및 세션 관리 전략(Timeout, 재발송) 최적화-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/9">
+  <img src="https://img.shields.io/badge/Tistory-Spring Security를 활용한 CSRF 공격 방어: Thymeleaf와 AJAX 적용 사례-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/10">
+  <img src="https://img.shields.io/badge/Tistory-Spring Boot 게시판 Authentication 객체 동기화를 통한 회원 정보 수정 처리-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/11">
+  <img src="https://img.shields.io/badge/Tistory-CustomAuthenticationFailureHandler를 통한 예외 처리 커스텀(로그인 실패)-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/12">
+  <img src="https://img.shields.io/badge/Tistory-OAuth 2.0 기반 소셜 로그인(Google, Naver) 연동 및 확장-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/13">
+  <img src="https://img.shields.io/badge/Tistory-세션 기반 게시글 권한 제어 및 인가(Authorization) 로직-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/14">
+  <img src="https://img.shields.io/badge/Tistory-인가 로직 리팩토링: 비정상적 접근 차단 및 예외 처리 프로세스-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/15">
+  <img src="https://img.shields.io/badge/Tistory-Spring Boot AJAX를 활용한 비동기 댓글 등록 및 실시간 UI 렌더링-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/16">
+  <img src="https://img.shields.io/badge/Tistory-RESTful API 기반 댓글 CRUD API 설계 및 구현-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/17">
+  <img src="https://img.shields.io/badge/Tistory-조건부 렌더링을 활용한 댓글 관리 권한 분리 및 UI UX 개선-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/18">
+  <img src="https://img.shields.io/badge/Tistory-Spring Validation을 활용한 비인증 사용자 입력값 검증-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/19">
+  <img src="https://img.shields.io/badge/Tistory-트러블슈팅: 타임리프 폼 바인딩 오류 및 페이지 튕김 현상-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/20">
+  <img src="https://img.shields.io/badge/Tistory-RedirectAttributes를 활용한 PRG 패턴 구현 및 데이터 유지-orange?style=for-the-badge&logo=tistory">
+</a><br>
+<a href="https://dev-afteryou.tistory.com/22">
+  <img src="https://img.shields.io/badge/Tistory-set-nickname 소셜 전용 닉네임 수정 리팩토링-orange?style=for-the-badge&logo=tistory">
+</a><br>
 
 
 
