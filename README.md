@@ -63,6 +63,9 @@
 - Bootstrap 5.3.2
 - Thymeleaf
 - AJAX
+
+<p align="right">(<a href="#-목차">맨 위로 가기</a>)</p>
+
 # **2. 실행 화면**
 <details>
 <summary>🔍 게시글 관련 보기 (클릭)</summary>
@@ -133,6 +136,8 @@
 
 </details>
 
+<p align="right">(<a href="#-목차">맨 위로 가기</a>)</p>
+
 <details>
 <summary>🔍 회원 관련 보기 (클릭)</summary>
    
@@ -182,6 +187,8 @@ DB에 있는 이메일을 입력하면 중복으로 인해 불가능한 모습
 
 </details>
 
+<p align="right">(<a href="#-목차">맨 위로 가기</a>)</p>
+
 <details>
 <summary>🔍 댓글 관련 보기 (클릭)</summary>
    
@@ -222,6 +229,8 @@ DB에 있는 이메일을 입력하면 중복으로 인해 불가능한 모습
 회원 댓글, 본인이 직접 작성한 댓글을 삭제할 수 있다. AJAX 비동기로 인하여 재로딩없이 댓글 삭제
 
 </details>
+
+<p align="right">(<a href="#-목차">맨 위로 가기</a>)</p>
 
 # **3. 구조 및 설계**
 ## **1. 패키지 구조**
@@ -323,6 +332,8 @@ src
 
 <img width="656" height="731" alt="게시판 시스템 아키텍처 drawio" src="https://github.com/user-attachments/assets/08356972-f0fc-464d-90fd-6482b585c375" />
 
+<p align="right">(<a href="#-목차">맨 위로 가기</a>)</p>
+
 # **개발 내용**
 
 <a href="https://dev-afteryou.tistory.com/2">
@@ -386,6 +397,8 @@ src
   <img src="https://img.shields.io/badge/Tistory-set--nickname 소셜 전용 닉네임 수정 리팩토링-orange?style=for-the-badge&logo=tistory">
 </a><br>
 
+<p align="right">(<a href="#-목차">맨 위로 가기</a>)</p>
+
 # 프로젝트 보완할 점
 
 기본적인 CRUD게시판을 공부한 뒤 제가 구상하고 싶은 기능들을 하나씩 추가하면서 진행했습니다.
@@ -421,3 +434,5 @@ BoardDTO와 BoardEntity(DB구조)의 변환, 비동기 방식을 위한 @Respons
 컨트롤러에 돌려주는 Service, 가공된 데이터를 모델에 담아 사용자에게 HTML로 보여주는 Controller의 흐름을 이해하게 됐고 다른 프로젝트를 진행할 때 도움이 될 것이라고 생각합니다.
 
 끝까지 읽어주셔서 감사합니다.
+
+<p align="right">(<a href="#-목차">맨 위로 가기</a>)</p>
