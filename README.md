@@ -355,9 +355,8 @@ src
   <img src="https://img.shields.io/badge/Tistory-RedirectAttributes를 활용한 PRG 패턴 구현 및 데이터 유지-orange?style=for-the-badge&logo=tistory">
 </a><br>
 <a href="https://dev-afteryou.tistory.com/22">
-  <img src="https://img.shields.io/badge/Tistory-set-nickname 소셜 전용 닉네임 수정 리팩토링-orange?style=for-the-badge&logo=tistory">
+  <img src="https://img.shields.io/badge/Tistory-set--nickname 소셜 전용 닉네임 수정 리팩토링-orange?style=for-the-badge&logo=tistory">
 </a><br>
-
 
 
 
