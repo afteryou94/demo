@@ -2,7 +2,9 @@
 > **Spring Boot와 JPA를 활용한 CRUD 및 보안 강화 커뮤니티 웹 서비스**
 >
 > <img width="1878" height="965" alt="2026-04-06 17_03_43-demo – BoardService java  demo main" src="https://github.com/user-attachments/assets/8ae64bb2-126a-43d3-abc2-ecf9c747c0d8" />
-
+# 📌 프로젝트 배포 링크
+🔗 **시연 URL:** [https://my-spring-board-ltit.onrender.com/](https://my-spring-board-ltit.onrender.com/)
+> ⚠️ **참고:** 무료 호스팅 특성상 첫 접속 시 서버 깨우기(Cold Start)로 인해 약 30초~1분의 대기 시간이 발생할 수 있습니다.
 ## 📑 목차
 
 1. [**프로젝트 개요**](#1-프로젝트-개요)
