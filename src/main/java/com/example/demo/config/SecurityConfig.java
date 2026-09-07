@@ -68,7 +68,7 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(options -> options.disable()))
                 .authorizeHttpRequests(authorize -> authorize
 
-                        .requestMatchers("/board/**", "/board/paging", "/board/{id}", "/css/**", "/js/**", "member/save", "/member/set-nickname", "/member/mail-auth",
+                        .requestMatchers("/board/**", "/board/paging", "/board/{id}", "/css/**", "/js/**", "/member/save", "/member/set-nickname", "/member/mail-auth",
                                 "/member/id-check", "/member/login", "/member/nickname-check", "/images/**", "/comment/**", "/board/delete-check/**"
                                 , "/board/delete").permitAll()
                         .requestMatchers("/member/update", "/member/delete", "/member/my-page").authenticated()
