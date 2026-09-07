@@ -82,10 +82,14 @@ public class MemberController {
     }
 
     @PostMapping("/update")
-    public String update(@Valid @ModelAttribute("updateMember") MemberUpdateDTO updateDTO, BindingResult bindingResult, HttpSession session) {
+    public String update(@Valid @ModelAttribute("updateMember") MemberUpdateDTO updateDTO,
+                         BindingResult bindingResult,
+                         HttpSession session,
+                         Model model) {
 
 
         if (bindingResult.hasErrors()) {
+
             return "memberUpdate";
         }
 
@@ -128,16 +132,29 @@ public class MemberController {
 
         String email = (String) session.getAttribute("loginEmail");
         model.addAttribute("memberEmail", email);
+
+        model.addAttribute("updateDTO", new MemberUpdateDTO());
         return "set-nickname";
     }
 
 
     @PostMapping("/set-nickname")
-    public String setNickname(@RequestParam("memberEmail") String memberEmail, @RequestParam("memberNickname") String memberNickname, HttpSession session) {
+    public String setNickname(@Valid @ModelAttribute("updateDTO") MemberUpdateDTO updateDTO,
+                              BindingResult bindingResult,
+                              @RequestParam("memberEmail") String memberEmail, // 이메일은 별도로 받기
+                              HttpSession session,
+                              Model model) {
 
-        memberService.updateNickname(memberEmail, memberNickname);
+        // 1. 유효성 검사 (UpdateDTO에 정의된 닉네임 규칙 2~10자 체크)
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("memberEmail", memberEmail);
+            return "set-nickname";
+        }
 
-        session.setAttribute("loginNickname", memberNickname);
+        // 2. 서비스 호출 (UpdateDTO의 닉네임과 별도로 받은 이메일 사용)
+        memberService.updateNickname(memberEmail, updateDTO.getMemberNickname());
+
+        session.setAttribute("loginNickname", updateDTO.getMemberNickname());
         return "redirect:/board/";
     }
 

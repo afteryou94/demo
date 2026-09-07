@@ -6,6 +6,8 @@
     <meta charset="UTF-8">
     <title>닉네임 설정</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+        <meta name="_csrf" th:content="${_csrf.token}"/>
+        <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <body class="bg-light">
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
@@ -14,12 +16,15 @@
             <h3 class="text-center fw-bold mb-4">닉네임 설정</h3>
             <p class="text-center text-muted small mb-4">반갑습니다! 서비스에서 사용할<br>닉네임을 정해주세요.</p>
 
-            <form th:action="@{/member/set-nickname}" method="post">
+            <form th:action="@{/member/set-nickname}" method="post" th:object="${updateDTO}">
                 <input type="hidden" name="memberEmail" th:value="${memberEmail}">
+
                 <div class="mb-4">
                     <label class="form-label fw-bold">닉네임</label>
-                    <input type="text" name="memberNickname" id="memberNickname" class="form-control form-control-lg"
-                           placeholder="2~10자 이내" required onblur="nicknameCheck()">
+                    <input type="text" name="memberNickname" id="memberNickname"
+                           class="form-control" placeholder="2~10자 이내"
+                           required onblur="nicknameCheck()">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('memberNickname')}" th:errors="*{memberNickname}"></div>
                     <div id="nickname-check-result" class="valid-msg mt-1"></div>
                 </div>
                 <div class="d-grid">
@@ -35,27 +40,38 @@
                     const nickname = document.getElementById("memberNickname").value;
                     const checkResult = document.getElementById("nickname-check-result");
                     const submitBtn = document.getElementById("submitBtn");
+                    // 1. 정규표현식 정의 (특수문자/공백 제외 2~10자)
+                    const nickRegex = /^[a-zA-Z0-9가-힣]{2,10}$/;
+
+                    if (!nickRegex.test(nickname)) {
+                        checkResult.className = "valid-msg mt-1 text-danger";
+                        checkResult.innerText = "특수문자와 공백 없이 2~10자로 입력해주세요.";
+                        submitBtn.disabled = true; // 유효하지 않으면 버튼 비활성화
+
+                        return;
+                    }
+
+
 
                     $.ajax({
-                        type: "post",
-                        url: "/member/nickname-check",
-                        data: { "memberNickname": nickname },
-                        beforeSend: function(xhr) {
-                        xhr.setRequestHeader(header, token); // 이게 없으면 시큐리티가 막습니다!
-                        },
-                        success: function(res) {
-                            if (res.replace(/\s/g, "") === "ok") { // 공백 제거 후 비교
-                                checkResult.style.color = "green";
-                                checkResult.innerText = "사용 가능한 닉네임입니다.";
-                                submitBtn.disabled = false;
-                            } else {
-                                checkResult.style.color = "red";
-                                checkResult.innerText = nickname + " 닉네임은 이미 사용중입니다.";
-                                submitBtn.disabled = true;
-                            }
+                    type: "post",
+                    url: "/member/nickname-check",
+                    data: { "memberNickname": nickname },
+                    beforeSend: function(xhr) { xhr.setRequestHeader(header, token); },
+                    success: function(res) {
+                        if (res.trim() === "ok") {
+                            checkResult.className = "valid-msg mt-1 text-success";
+                            checkResult.innerText = "사용 가능한 닉네임입니다.";
+                            submitBtn.disabled = false;
+                        } else {
+                            checkResult.className = "valid-msg mt-1 text-danger";
+                            checkResult.innerText = "이미 사용중인 닉네임입니다.";
+                            submitBtn.disabled = true;
                         }
-                    });
-                };
+                    }
+                });
+            };
+
             </script>
         </div>
     </div>
