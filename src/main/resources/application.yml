@@ -9,9 +9,13 @@ spring:
     name: demo
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/db_codingrecipe?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: user_codingrecipe
-    password: 1234
+#    개인 서버
+#    url: jdbc:mysql://localhost:3306/db_codingrecipe?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+#    username: user_codingrecipe
+#    password: 1234
+     url: mysql://avnadmin:AVNS_HqS9wu0fz90Xj7hETbv@boardproject-mysql-developerlbc94-563f.l.aivencloud.com:14296/defaultdb?ssl-mode=REQUIRED
+     username: avnadmin
+     password: AVNS_HqS9wu0fz90Xj7hETbv
   thymeleaf:
     cache: false
   mail:
@@ -30,4 +34,3 @@ spring:
     hibernate:
       ddl-auto: update
       format_sql: true
-
