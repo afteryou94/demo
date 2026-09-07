@@ -14,7 +14,7 @@ spring:
 #    username: user_codingrecipe
 #    password: 1234
      url: mysql://avnadmin:AVNS_HqS9wu0fz90Xj7hETbv@boardproject-mysql-developerlbc94-563f.l.aivencloud.com:14296/defaultdb?ssl-mode=REQUIRED
-     username: avnadmin
+     username: ${DB_USERNAME}
      password: ${DB_PASSWORD}
   thymeleaf:
     cache: false
