@@ -26,7 +26,6 @@ repositories {
 }
 
 dependencies {
-	dependencies {
 		// 스프링 데이터 JPA: 인터페이스 기반으로 데이터베이스(DB)를 쉽게 다루게 해주는 핵심 라이브러리
 		implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
@@ -46,7 +45,9 @@ dependencies {
 
 		// 테스트 라이브러리: JUnit 등을 활용하여 코드의 정상 동작을 확인하는 테스트 환경 제공
 		testImplementation 'org.springframework.boot:spring-boot-starter-test'
+		testImplementation 'org.mockito:mockito-core'
 		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
 
 		// 코틀린 표준 라이브러리: 프로젝트 내에서 코틀린 언어 기능을 사용할 수 있게 해줌
 		implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
@@ -65,8 +66,13 @@ dependencies {
 
 		// 유효성 검사: @Size, @NotEmpty 등 어노테이션으로 입력값의 길이나 형식을 검증
 		implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+		//aiven과 별개로 테스트
+		testImplementation 'com.h2database:h2'
+
+
 	}
-}
+
 
 tasks.named('test') {
 	useJUnitPlatform()
